@@ -1,11 +1,13 @@
-/*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-
-*/
 package main
 
-import "homestead/cmd"
+import (
+	"homestead/cmd"
+
+	"github.com/spf13/viper"
+)
 
 func main() {
+	viper.SetConfigFile(".env")
+
 	cmd.Execute()
 }

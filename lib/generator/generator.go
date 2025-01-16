@@ -1,5 +1,7 @@
 package generator
 
-func Generate() {
-	panic("2025-13-01")
+import "io"
+
+func GenerateMarkdown(reader io.Reader) (md []byte, err error) {
+	return md, err
 }

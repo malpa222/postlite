@@ -21,11 +21,7 @@ var serveCmd = &cobra.Command{
 			panic("The port flag has not been set")
 		}
 
-		httpsF, err := cmd.PersistentFlags().GetBool(https)
-		if err != nil {
-			panic("The https flag has not been set")
-		}
-
+		httpsF, _ := cmd.PersistentFlags().GetBool(https)
 		server.Serve(portF, httpsF)
 	},
 }
