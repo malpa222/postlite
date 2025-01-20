@@ -2,7 +2,7 @@ package blogFS
 
 import (
 	"io/fs"
-	"os"
+	"maps"
 	"path/filepath"
 	"slices"
 )
@@ -11,40 +11,34 @@ import (
 
 type BlogFile struct {
 	Path  string
-	Name  string
 	IsDir bool
 }
 
 // ---- BlogFS
 
-type BlogFS struct {
-	Fsys  fs.FS
+type BlogFS interface {
+	AddFile(bfile BlogFile)
+	RemoveFile(bfile BlogFile)
+	Find(pattern string) []BlogFile
+}
+
+type blogFS struct {
+	root  string
+	fsys  fs.FS
 	files []BlogFile
 }
 
-func (b BlogFS) ReadSource(root string) error {
-	b.Fsys = os.DirFS(root)
+func NewBlogFS(fsys fs.FS, root string) BlogFS {
+	var blog blogFS
 
-	fs.WalkDir(b.Fsys, root, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
+	blog.fsys = fsys
+	blog.root = root
+	blog.files = blog.readSource()
 
-		bfile := BlogFile{
-			Path:  path,
-			Name:  d.Name(),
-			IsDir: d.IsDir(),
-		}
-
-		b.files = append(b.files, bfile)
-
-		return nil
-	})
-
-	return nil
+	return &blog
 }
 
-func (b BlogFS) AddFile(bfile BlogFile) {
+func (b *blogFS) AddFile(bfile BlogFile) {
 	b.files = append(b.files, bfile)
 
 	slices.SortFunc(b.files, func(a, b BlogFile) int {
@@ -58,31 +52,57 @@ func (b BlogFS) AddFile(bfile BlogFile) {
 	})
 }
 
-func (b BlogFS) RemoveFile(pattern string) error {
-	filtered := b.Filter(pattern)
+func (b *blogFS) RemoveFile(bfile BlogFile) {
+	found := b.filter(bfile.Path)
+	indices := maps.Keys(found)
 
-	for _, val := range filtered {
-		b.files = append(b.files[:val], b.files[val+1:]...)
+	for index := range indices {
+		b.files = append(b.files[:index], b.files[:index+1]...)
 	}
-
-	return nil
 }
 
-func (b BlogFS) Filter(pattern string) map[string]int {
-	filtered := make(map[string]int)
+func (b *blogFS) Find(pattern string) []BlogFile {
+	var found []BlogFile
+
+	filtered := b.filter(pattern)
+	for _, file := range filtered {
+		found = append(found, file)
+	}
+
+	return found
+}
+
+func (b *blogFS) readSource() []BlogFile {
+	var files []BlogFile
+
+	fs.WalkDir(b.fsys, b.root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		bfile := BlogFile{Path: path, IsDir: d.IsDir()}
+		files = append(b.files, bfile)
+
+		return nil
+	})
+
+	return files
+}
+
+func (b *blogFS) filter(pattern string) map[int]BlogFile {
+	filtered := make(map[int]BlogFile)
 
 	for idx, file := range b.files {
-		matched, err := filepath.Match(pattern, file.Path)
+		matched, err := filepath.Match(pattern, filepath.Base(file.Path))
 		if err != nil {
 			return filtered
 		}
 
 		if matched {
-			filtered[file.Path] = idx
+			filtered[idx] = file
 		} else {
 			continue
 		}
-
 	}
 
 	return filtered
