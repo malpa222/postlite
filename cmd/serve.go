@@ -1,8 +1,12 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
+	"os"
 
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
+	"homestead/lib/blogFS"
 	"homestead/lib/server"
 )
 
@@ -16,13 +20,19 @@ var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Starts the server",
 	Run: func(cmd *cobra.Command, args []string) {
+		// get configuration flags
+		httpsF, _ := cmd.PersistentFlags().GetBool(https)
 		portF, err := cmd.PersistentFlags().GetString(port)
 		if err != nil {
 			panic("The port flag has not been set")
 		}
 
-		httpsF, _ := cmd.PersistentFlags().GetBool(https)
-		server.Serve(portF, httpsF)
+		// set up the filesystem for serving
+		root := viper.GetString("ROOT_DIR")
+		fsys := blogFS.NewBlogFS(os.DirFS(root), root)
+
+		// start thes server
+		server.Serve(portF, httpsF, fsys)
 	},
 }
 

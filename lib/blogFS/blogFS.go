@@ -1,6 +1,7 @@
 package blogFS
 
 import (
+	"io"
 	"io/fs"
 	"maps"
 	"path/filepath"
@@ -14,9 +15,14 @@ type BlogFile struct {
 	IsDir bool
 }
 
+func (b *BlogFile) GetReader() io.Reader {
+	return nil
+}
+
 // ---- BlogFS
 
 type BlogFS interface {
+	GetFsys() fs.FS
 	AddFile(bfile BlogFile)
 	RemoveFile(bfile BlogFile)
 	Find(pattern string) []BlogFile
@@ -36,6 +42,10 @@ func NewBlogFS(fsys fs.FS, root string) BlogFS {
 	blog.files = blog.readSource()
 
 	return &blog
+}
+
+func (b *blogFS) GetFsys() fs.FS {
+	return b.fsys
 }
 
 func (b *blogFS) AddFile(bfile BlogFile) {
