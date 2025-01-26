@@ -1,7 +1,6 @@
-package blogFS
+package utils
 
 import (
-	"io"
 	"io/fs"
 	"maps"
 	"path/filepath"
@@ -13,10 +12,6 @@ import (
 type BlogFile struct {
 	Path  string
 	IsDir bool
-}
-
-func (b *BlogFile) GetReader() io.Reader {
-	return nil
 }
 
 // ---- BlogFS
@@ -48,6 +43,8 @@ func (b *blogFS) GetFsys() fs.FS {
 	return b.fsys
 }
 
+// TODO: Make the function thread safe
+// TODO: Write file to the disk
 func (b *blogFS) AddFile(bfile BlogFile) {
 	b.files = append(b.files, bfile)
 
@@ -62,6 +59,22 @@ func (b *blogFS) AddFile(bfile BlogFile) {
 	})
 }
 
+func (b *blogFS) AddToOutput(bfile BlogFile) {
+	b.files = append(b.files, bfile)
+
+	slices.SortFunc(b.files, func(a, b BlogFile) int {
+		if a.Path > b.Path {
+			return 1
+		} else if a.Path == b.Path {
+			return 0
+		} else {
+			return -1
+		}
+	})
+}
+
+// TODO: Make the function thread safe
+// TODO: Remove file from the disk
 func (b *blogFS) RemoveFile(bfile BlogFile) {
 	found := b.filter(bfile.Path)
 	indices := maps.Keys(found)
