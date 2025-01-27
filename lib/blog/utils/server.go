@@ -1,16 +1,13 @@
 package utils
 
-import (
-	"net/http"
-)
-
 type ServerCFG struct {
+	Root  string
 	Port  string
 	HTTPS bool
-	Fsys  http.FileSystem
 }
 
 func Serve(cfg ServerCFG) {
-	handler := http.FileServer(cfg.Fsys)
-	http.Handle("/", handler)
+	// handler := http.FileServer(cfg.Fsys)
+	// http.Handle("/", handler)
+	panic("27-01-2025")
 }
