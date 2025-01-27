@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"homestead/lib/blog"
+	"log"
 
 	"github.com/spf13/cobra"
 )
 
 const (
-	port  string = "PORT"
-	https string = "HTPS"
+	port  string = "port"
+	https string = "https"
 )
 
 // serveCmd represents the serve command
@@ -19,7 +20,7 @@ var serveCmd = &cobra.Command{
 		httpsF, _ := cmd.PersistentFlags().GetBool(https)
 		portF, err := cmd.PersistentFlags().GetString(port)
 		if err != nil {
-			panic("The port flag has not been set")
+			log.Fatalf("The port flag has not been set: %v", err)
 		}
 
 		blog.Serve(portF, httpsF)
@@ -29,6 +30,6 @@ var serveCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(serveCmd)
 
-	serveCmd.PersistentFlags().String("port", ":80", "Sets the port of the server")
-	serveCmd.PersistentFlags().Bool("HTTPS", true, "Enables or disables HTTPS")
+	serveCmd.PersistentFlags().String(port, ":80", "Sets the port of the server")
+	serveCmd.PersistentFlags().Bool(https, true, "Enables or disables HTTPS")
 }
