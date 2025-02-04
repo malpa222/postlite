@@ -1,25 +1,12 @@
-package blog
+package generator
 
 import (
 	"homestead/lib/fshelper"
 	"homestead/lib/parser"
-	"homestead/lib/server"
 	"log"
 
 	"github.com/spf13/viper"
 )
-
-func Serve(port string, https bool) {
-	root := viper.GetString("ROOT_DIR")
-
-	cfg := server.ServerCFG{
-		Root:  root,
-		Port:  port,
-		HTTPS: https,
-	}
-
-	server.Serve(cfg)
-}
 
 func GenerateStaticContent() {
 	root := viper.GetString("ROOT_DIR")

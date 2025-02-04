@@ -1,10 +1,11 @@
 package cmd
 
 import (
-	"homestead/lib/blog"
+	"homestead/lib/server"
 	"log"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 const (
@@ -23,7 +24,13 @@ var serveCmd = &cobra.Command{
 			log.Fatalf("The port flag has not been set: %v", err)
 		}
 
-		blog.Serve(portF, httpsF)
+		cfg := server.ServerCFG{
+			Root:  viper.GetString("ROOT_DIR"),
+			Port:  portF,
+			HTTPS: httpsF,
+		}
+
+		server.Serve(cfg)
 	},
 }
 

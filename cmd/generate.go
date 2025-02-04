@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"homestead/lib/blog"
+	"homestead/lib/generator"
 
 	"github.com/spf13/cobra"
 )
@@ -11,7 +11,7 @@ var generateCmd = &cobra.Command{
 	Use:   "generate",
 	Short: "Generates the static site content",
 	Run: func(cmd *cobra.Command, args []string) {
-		blog.GenerateStaticContent()
+		generator.GenerateStaticContent()
 	},
 }
 
