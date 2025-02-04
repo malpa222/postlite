@@ -10,30 +10,16 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type FrontMatter struct {
-	Name  string
-	Title string
-}
+const generator = `  <meta name="GENERATOR" content="github.com/malpa222/homestead`
+
+var post BlogPost
 
 func ParseMarkdown(md []byte) []byte {
-	// create markdown parser with extensions
-	p := newParser()
-	doc := p.Parse(md)
+	parser := newParser()
+	doc := parser.Parse(md)
 
-	// create HTML renderer with extensions
-	htmlFlags := html.CommonFlags | html.HrefTargetBlank | html.CompletePage
-	opts := html.RendererOptions{Flags: htmlFlags}
-	renderer := html.NewRenderer(opts)
-
+	renderer := newRenderer(post)
 	return markdown.Render(doc, renderer)
-}
-
-// Custom parser extensions
-type fmFields map[string]any
-
-type frontmatterNode struct {
-	ast.Leaf
-	Fields map[string]string
 }
 
 func newParser() *parser.Parser {
@@ -42,6 +28,18 @@ func newParser() *parser.Parser {
 	p.Opts.ParserHook = frontmatterHook
 
 	return p
+}
+
+func newRenderer(p BlogPost) *html.Renderer {
+	htmlFlags := html.CommonFlags | html.HrefTargetBlank | html.CompletePage
+	opts := html.RendererOptions{
+		Title:     p.Title,
+		CSS:       p.Stylesheet,
+		Flags:     htmlFlags,
+		Generator: generator,
+	}
+
+	return html.NewRenderer(opts)
 }
 
 func frontmatterHook(data []byte) (node ast.Node, rest []byte, cursor int) {
@@ -56,8 +54,7 @@ func frontmatterHook(data []byte) (node ast.Node, rest []byte, cursor int) {
 	end := bytes.Index(data[cursor:], delimeter) // find the end of the fm
 
 	// extract the whole frontmatter bit
-	fm := FrontMatter{}
-	yaml.Unmarshal(data[cursor:end], &fm)
+	yaml.Unmarshal(data[cursor:end+cursor], &post)
 
 	return node, rest, cursor
 }
