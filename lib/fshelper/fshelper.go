@@ -1,4 +1,4 @@
-package utils
+package fshelper
 
 import (
 	"io/fs"

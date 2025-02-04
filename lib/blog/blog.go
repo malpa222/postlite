@@ -1,7 +1,9 @@
 package blog
 
 import (
-	u "homestead/lib/blog/utils"
+	"homestead/lib/fshelper"
+	"homestead/lib/parser"
+	"homestead/lib/server"
 	"log"
 
 	"github.com/spf13/viper"
@@ -10,38 +12,38 @@ import (
 func Serve(port string, https bool) {
 	root := viper.GetString("ROOT_DIR")
 
-	cfg := u.ServerCFG{
+	cfg := server.ServerCFG{
 		Root:  root,
 		Port:  port,
 		HTTPS: https,
 	}
 
-	u.Serve(cfg)
+	server.Serve(cfg)
 }
 
 func GenerateStaticContent() {
 	root := viper.GetString("ROOT_DIR")
 	output := viper.GetString("OUTPUT_DIR")
 
-	mdfiles, err := u.FindMdFiles(root)
+	mdfiles, err := fshelper.FindMdFiles(root)
 	if err != nil {
 		log.Fatalf("Couldn't generate the static content: %v", err) // exits the program
 	}
 
 	for _, file := range mdfiles {
-		md, err := u.ReadFromDisk(file)
+		md, err := fshelper.ReadFromDisk(file)
 		if err != nil {
 			log.Printf("Error reading %v: %v", file, err)
 			continue
 		}
 
-		html := u.ParseMarkdown(md)
+		html := parser.ParseMarkdown(md)
 		if len(html) == 0 {
 			log.Printf("Error parsing %v", file)
 			continue
 		}
 
-		newpath := u.ChangePathBlogPost(file, output)
-		u.WriteToDisk(newpath, html)
+		newpath := fshelper.ChangePathBlogPost(file, output)
+		fshelper.WriteToDisk(newpath, html)
 	}
 }

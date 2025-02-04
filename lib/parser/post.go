@@ -1,4 +1,4 @@
-package utils
+package parser
 
 type BlogPost struct {
 	Title      string
