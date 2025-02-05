@@ -1,10 +1,13 @@
 package generator
 
 import (
+	"fmt"
 	"homestead/lib/fshelper"
 	"homestead/lib/parser"
+	"io"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 // Basic site tree:
@@ -15,35 +18,90 @@ import (
 // |-- assets
 // |   |-- styles
 // |   |__ images
-// |-- public     	 <--- generated
+// |-- public     	<--- generated content + resources
 
 func GenerateStaticContent(root string) {
+	root, err := filepath.Abs(root)
+	if err != nil {
+		log.Fatalf("Not able to read %s: %v", root, err)
+	}
+
 	resources := localizeResourcePaths(root)
+	pub := fmt.Sprintf("%s/%s", root, public)
 
-	setupTree(resources)
-	go copyResources(resources) // FIXME: lock this shit
-
-	generatePosts(root, resources[Posts])
+	cleanPublic(pub)
+	copyResources(root, pub)
+	generatePosts(root, resources[posts])
 }
 
-// This is a very dumb approach: deleting public/, and then creating
-// every directory again to populate with newly generated content.
-// TODO: Would be nice to cache files by keeping track of their hashes
-// or something - for autoupdating.
-func setupTree(resources map[resource]string) {
-	if err := os.RemoveAll(resources[Public]); err != nil {
+func cleanPublic(pub string) {
+	// This is a very dumb approach: deleting public/, to be able to
+	// repopulate it with newly generated content.
+	// TODO: Would be nice to cache files by keeping track of their
+	// hashes or something - for autoupdating.
+	if err := os.RemoveAll(pub); err != nil {
 		log.Fatalf("Couldn't remove the existing public/ dir: %v", err)
 	}
-
-	for _, path := range resources {
-		if err := os.Mkdir(path, os.ModeAppend); err != nil {
-			log.Fatalf("Couldn't create directory %v: %v", path, err)
-		}
-	}
 }
 
-func copyResources(resources map[resource]string) {
+func copyResources(source string, destination string) {
+	// get the top level entries
+	entries, err := os.ReadDir(source)
+	if err != nil {
+		log.Fatalf("Error while reading %s: %v", source, err)
+	}
 
+	// create the destination directory
+	if err := os.Mkdir(destination, 0777); err != nil {
+		log.Fatalf("Error while creating destination directory %s: %v", source, err)
+	}
+
+	// DISGUSTINGGGGGGGG
+	for _, entry := range entries {
+		name := entry.Name()
+
+		// skip the posts/ dir
+		if name == resourcePaths[posts] {
+			continue
+		}
+
+		if entry.IsDir() { // straightaway, copy the whole directory
+			src := fmt.Sprintf("%s/%s", source, name)
+			dst := fmt.Sprintf("%s/%s", destination, name)
+
+			fs := os.DirFS(src)
+			if err := os.CopyFS(dst, fs); err != nil {
+				log.Fatalf("Error while copying %s: %v", name, err)
+			}
+
+			continue
+		} else if filepath.Ext(name) == ".yaml" { // exclude config files
+			continue
+		} else {
+			src := fmt.Sprintf("%s/%s", source, name)
+			dst := fmt.Sprintf("%s/public/%s", source, name)
+
+			original, err := os.Open(src)
+			if err != nil {
+				log.Printf("Error while reading %s: %v", src, err)
+				continue
+			}
+			defer original.Close()
+
+			new, err := os.Create(dst)
+			if err != nil {
+				log.Printf("Error while creating %s: %v", src, err)
+				continue
+			}
+			defer new.Close()
+
+			_, err = io.Copy(new, original)
+			if err != nil {
+				log.Printf("Error while copying %s: %v", src, err)
+				continue
+			}
+		}
+	}
 }
 
 func generatePosts(path string, output string) {

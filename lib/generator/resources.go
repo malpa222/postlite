@@ -6,18 +6,18 @@ import (
 
 type resource int
 
+const public = "public"
+
 const (
-	Public resource = iota
-	Posts
-	Styles
-	Media
+	posts resource = iota
+	styles
+	media
 )
 
 var resourcePaths map[resource]string = map[resource]string{
-	Public: "public",
-	Posts:  "public/posts",
-	Styles: "public/assets/styles",
-	Media:  "public/assets/media",
+	posts:  "posts",
+	styles: "assets/styles",
+	media:  "assets/media",
 }
 
 func localizeResourcePaths(root string) map[resource]string {
