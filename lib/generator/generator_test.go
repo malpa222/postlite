@@ -11,27 +11,22 @@ import (
 const homestead string = "homestead"
 const test string = "test"
 
-func TestCleanPublic(t *testing.T) {
-	pub := fmt.Sprintf("%s/%s", getTestDir(), public)
-
-	cleanPublic(pub)
-}
-
+// Manual tests
 func TestCopyResources(t *testing.T) {
 	src := getTestDir()
-	pub := fmt.Sprintf("%s/%s", getTestDir(), public)
+	pub := fmt.Sprintf("%s/%s", src, publicDir)
 
-	cleanPublic(pub)
-	copyResources(src, pub)
+	resources := localizeResourcePaths(src)
+	copyResources(pub, resources)
 }
 
 func TestGeneratePosts(t *testing.T) {
 	src := getTestDir()
-	pub := fmt.Sprintf("%s/%s", getTestDir(), public)
-	posts := fmt.Sprintf("%s/%s", src, resourcePaths[posts])
+	pub := fmt.Sprintf("%s/%s", getTestDir(), publicDir)
+	posts := fmt.Sprintf("%s/%s", src, postsDir)
 
-	cleanPublic(pub)
-	copyResources(src, pub)
+	resources := localizeResourcePaths(src)
+	copyResources(pub, resources)
 
 	generatePosts(posts, pub)
 }

@@ -4,22 +4,23 @@ import (
 	"fmt"
 )
 
+// ------ Special treatment
+const (
+	publicDir string = "public"
+	postsDir  string = "posts"
+)
+
+// ------ Resources
 type resource int
 
-const public = "public"
-const markdownExt = ".md"
-const htmlExt = ".html"
-
 const (
-	posts resource = iota
-	styles
-	media
+	assets resource = iota // contains styles, images etc.
+	index                  // landing page
 )
 
 var resourcePaths map[resource]string = map[resource]string{
-	posts:  "posts",
-	styles: "assets/styles",
-	media:  "assets/media",
+	assets: "assets",
+	index:  "index.html",
 }
 
 func localizeResourcePaths(root string) map[resource]string {
