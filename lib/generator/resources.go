@@ -7,6 +7,8 @@ import (
 type resource int
 
 const public = "public"
+const markdownExt = ".md"
+const htmlExt = ".html"
 
 const (
 	posts resource = iota

@@ -1,4 +1,8 @@
 .vscode
 
+# executables
 main
 homestead
+
+# site generated in tests
+test/public

@@ -26,13 +26,14 @@ func TestCopyResources(t *testing.T) {
 }
 
 func TestGeneratePosts(t *testing.T) {
-	src := fmt.Sprintf("%s/%s", getTestDir(), resourcePaths[posts])
+	src := getTestDir()
 	pub := fmt.Sprintf("%s/%s", getTestDir(), public)
+	posts := fmt.Sprintf("%s/%s", src, resourcePaths[posts])
 
 	cleanPublic(pub)
 	copyResources(src, pub)
 
-	generatePosts(src, pub)
+	generatePosts(posts, pub)
 }
 
 func getTestDir() string {

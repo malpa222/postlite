@@ -2,12 +2,13 @@ package generator
 
 import (
 	"fmt"
-	"homestead/lib/fshelper"
 	"homestead/lib/parser"
 	"io"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // Basic site tree:
@@ -30,7 +31,7 @@ func GenerateStaticContent(root string) {
 	pub := fmt.Sprintf("%s/%s", root, public)
 
 	cleanPublic(pub)
-	copyResources(root, pub)
+	copyResources(root, pub) // TODO: make this async
 	generatePosts(root, resources[posts])
 }
 
@@ -104,26 +105,30 @@ func copyResources(source string, destination string) {
 	}
 }
 
-func generatePosts(path string, output string) {
-	mdfiles, err := fshelper.FindMdFiles(path)
-	if err != nil {
-		log.Fatalf("Couldn't generate the static content: %v", err) // exits the program
-	}
-
-	for _, file := range mdfiles {
-		md, err := fshelper.ReadFromDisk(file)
+func generatePosts(source string, public string) {
+	filepath.WalkDir(source, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			log.Printf("Error reading %v: %v", file, err)
-			continue
+			return nil
+		} else if filepath.Ext(path) != markdownExt {
+			return nil
+		}
+
+		md, err := os.ReadFile(path)
+		if err != nil {
+			log.Printf("Error reading %s: %v", path, err)
 		}
 
 		html := parser.ParseMarkdown(md)
-		if len(html) == 0 {
-			log.Printf("Error parsing %v", file)
-			continue
+
+		pagename := filepath.Base(path)
+		pagename = strings.Replace(pagename, markdownExt, htmlExt, 1)
+		newpath := fmt.Sprintf("%s/posts/%s", public, pagename)
+
+		os.MkdirAll(filepath.Dir(newpath), 0777)
+		if err := os.WriteFile(newpath, html, 0755); err != nil {
+			log.Printf("Error creating %s: %v", path, err)
 		}
 
-		newpath := fshelper.ChangePathBlogPost(file, "") // FIXME: 2nd parameter was output
-		fshelper.WriteToDisk(newpath, html)
-	}
+		return nil
+	})
 }
