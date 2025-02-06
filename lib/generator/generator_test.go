@@ -2,6 +2,7 @@ package generator
 
 import (
 	"fmt"
+	"homestead/lib"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,18 +15,18 @@ const test string = "test"
 // Manual tests
 func TestCopyResources(t *testing.T) {
 	src := getTestDir()
-	pub := fmt.Sprintf("%s/%s", src, publicDir)
+	pub := fmt.Sprintf("%s/%s", src, lib.PublicDir)
 
-	resources := localizeResourcePaths(src)
+	resources := lib.LocalizeResourcePaths(src)
 	copyResources(pub, resources)
 }
 
 func TestGeneratePosts(t *testing.T) {
 	src := getTestDir()
-	pub := fmt.Sprintf("%s/%s", getTestDir(), publicDir)
-	posts := fmt.Sprintf("%s/%s", src, postsDir)
+	pub := fmt.Sprintf("%s/%s", getTestDir(), lib.PublicDir)
+	posts := fmt.Sprintf("%s/%s", src, lib.PostsDir)
 
-	resources := localizeResourcePaths(src)
+	resources := lib.LocalizeResourcePaths(src)
 	copyResources(pub, resources)
 
 	generatePosts(posts, pub)

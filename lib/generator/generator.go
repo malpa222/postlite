@@ -2,6 +2,7 @@ package generator
 
 import (
 	"fmt"
+	"homestead/lib"
 	"homestead/lib/parser"
 	"io"
 	"io/fs"
@@ -30,9 +31,9 @@ func GenerateStaticContent(root string) {
 		log.Fatalf("Malformed path %s: %v", root, err)
 	}
 
-	resources := localizeResourcePaths(root)
-	public := fmt.Sprintf("%s/%s", root, publicDir)
-	posts := fmt.Sprintf("%s/%s", root, postsDir)
+	resources := lib.LocalizeResourcePaths(root)
+	public := fmt.Sprintf("%s/%s", root, lib.PublicDir)
+	posts := fmt.Sprintf("%s/%s", root, lib.PostsDir)
 
 	// TODO: Make both of them async
 	if err := copyResources(public, resources); err != nil {
@@ -44,7 +45,7 @@ func GenerateStaticContent(root string) {
 	}
 }
 
-func copyResources(destination string, resources map[resource]string) error {
+func copyResources(destination string, resources map[lib.Resource]string) error {
 	// This is a very dumb approach: deleting public/, to be able to
 	// repopulate it all over again.
 	// TODO: Would be nice to cache files by keeping track of their
