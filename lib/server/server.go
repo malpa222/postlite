@@ -1,5 +1,13 @@
 package server
 
+import (
+	"fmt"
+	"homestead/lib"
+	"log"
+	"net/http"
+	"path/filepath"
+)
+
 type ServerCFG struct {
 	Root  string
 	Port  string
@@ -7,8 +15,14 @@ type ServerCFG struct {
 }
 
 func Serve(cfg ServerCFG) {
-	// handler := http.FileServer(cfg.Fsys)
-	// http.Handle("/", handler)
+	root, err := filepath.Abs(cfg.Root)
+	if err != nil {
+		log.Fatalf("Malformed path: %s", err)
+	}
 
-	panic("27-01-2025")
+	public := fmt.Sprintf("%s/%s", root, lib.PublicDir)
+	fs := http.Dir(public)
+
+	handler := http.FileServer(fs)
+	http.Handle("/", handler)
 }
