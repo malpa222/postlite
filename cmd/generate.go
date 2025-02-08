@@ -28,5 +28,5 @@ var generateCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(generateCmd)
 
-	serveCmd.PersistentFlags().String(path, ".", "The path to the website source")
+	generateCmd.PersistentFlags().String(path, ".", "The path to the website source")
 }

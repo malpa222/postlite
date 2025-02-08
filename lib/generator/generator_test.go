@@ -18,7 +18,7 @@ func TestCopyResources(t *testing.T) {
 	pub := fmt.Sprintf("%s/%s", src, lib.PublicDir)
 
 	resources := lib.LocalizeResourcePaths(src)
-	copyResources(pub, resources)
+	copyResources(resources, pub)
 }
 
 func TestGeneratePosts(t *testing.T) {
@@ -27,9 +27,15 @@ func TestGeneratePosts(t *testing.T) {
 	posts := fmt.Sprintf("%s/%s", src, lib.PostsDir)
 
 	resources := lib.LocalizeResourcePaths(src)
-	copyResources(pub, resources)
+	copyResources(resources, pub)
 
 	generatePosts(posts, pub)
+}
+
+func TestGenerateStaticContent(t *testing.T) {
+	src := getTestDir()
+
+	GenerateStaticContent(src)
 }
 
 func getTestDir() string {

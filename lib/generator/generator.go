@@ -36,29 +36,32 @@ func GenerateStaticContent(root string) {
 	posts := fmt.Sprintf("%s/%s", root, lib.PostsDir)
 
 	// TODO: Make both of them async
-	if err := copyResources(public, resources); err != nil {
+	if err := copyResources(resources, public); err != nil {
 		log.Fatal(err.Error())
 	}
 
-	if err := generatePosts(public, posts); err != nil {
+	if err := generatePosts(posts, public); err != nil {
 		log.Fatal(err.Error())
 	}
 }
 
-func copyResources(destination string, resources map[lib.Resource]string) error {
+func copyResources(resources map[lib.Resource]string, destination string) error {
 	// This is a very dumb approach: deleting public/, to be able to
 	// repopulate it all over again.
 	// TODO: Would be nice to cache files by keeping track of their
 	// hashes or something - for autoupdating.
+	log.Printf("Removing old %s....", destination)
 	if err := os.RemoveAll(destination); err != nil {
 		return &DeleteError{context: destination, err: err}
 	}
 
+	log.Printf("Creating new %s....", destination)
 	// create the destination directory
 	if err := os.Mkdir(destination, 0777); err != nil {
 		return &WriteError{context: destination, err: err}
 	}
 
+	log.Println("Copying resources....")
 	for _, path := range resources {
 		file, err := os.Stat(path)
 		if err != nil {
@@ -77,6 +80,8 @@ func copyResources(destination string, resources map[lib.Resource]string) error 
 				return &CopyError{context: path, err: err}
 			}
 		}
+
+		log.Printf("Copied %s to %s", filepath.Base(path), destination)
 	}
 
 	return nil
@@ -137,6 +142,8 @@ func generatePosts(source string, destination string) error {
 		if err := os.WriteFile(newpath, html, 0755); err != nil {
 			return &WriteError{context: path, err: err}
 		}
+
+		log.Printf("Parsed %s to %s", filepath.Base(path), newpath)
 
 		return nil
 	})

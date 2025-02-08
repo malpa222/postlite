@@ -20,9 +20,12 @@ func Serve(cfg ServerCFG) {
 		log.Fatalf("Malformed path: %s", err)
 	}
 
-	public := fmt.Sprintf("%s/%s", root, lib.PublicDir)
+	public := fmt.Sprintf("%s/%s/", root, lib.PublicDir)
 	fs := http.Dir(public)
 
 	handler := http.FileServer(fs)
 	http.Handle("/", handler)
+
+	log.Printf("Listening on %s ...", cfg.Port)
+	log.Fatal(http.ListenAndServe(cfg.Port, handler))
 }
