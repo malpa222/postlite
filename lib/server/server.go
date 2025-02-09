@@ -1,8 +1,7 @@
 package server
 
 import (
-	"fmt"
-	"homestead/lib"
+	"homestead/lib/blogfsys"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -20,12 +19,10 @@ func Serve(cfg ServerCFG) {
 		log.Fatalf("Malformed path: %s", err)
 	}
 
-	public := fmt.Sprintf("%s/%s/", root, lib.PublicDir)
-	fs := http.Dir(public)
-
-	handler := http.FileServer(fs)
-	http.Handle("/", handler)
+	fs := blogfsys.New(root)
+	server := http.FileServerFS(fs)
+	http.Handle("/", server)
 
 	log.Printf("Listening on %s ...", cfg.Port)
-	log.Fatal(http.ListenAndServe(cfg.Port, handler))
+	log.Fatal(http.ListenAndServe(cfg.Port, server))
 }
