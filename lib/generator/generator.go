@@ -6,6 +6,7 @@ import (
 	"homestead/lib/parser"
 	"io/fs"
 	"os"
+	"strings"
 )
 
 // Basic site tree:
@@ -18,17 +19,13 @@ import (
 // |   |__ images
 // |-- public     	<--- generated content + resources
 
-const markdownExt = ".md"
-const htmlExt = ".html"
+const public string = "public"
 
 var fsys b.BlogFsys
-var public string
 
-func GenerateStaticContent(root string) {
-	fsys = b.New(root)
-
-	public = fmt.Sprintf("%s/public", fsys.GetRoot())
-	os.RemoveAll(public)
+func GenerateStaticContent(fs b.BlogFsys) {
+	fsys = fs
+	cleanPublic()
 
 	for path, resource := range resourcePaths {
 		switch resource {
@@ -38,6 +35,11 @@ func GenerateStaticContent(root string) {
 			parse(path)
 		}
 	}
+}
+
+func cleanPublic() {
+	os.RemoveAll(public)
+	os.Mkdir(public, 0666) // FIXME: FIX THIS SHITTT!!!!!!
 }
 
 func copy(path string) {
@@ -67,14 +69,23 @@ func parse(path string) {
 			return nil
 		}
 
-		raw, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-
-		html := parser.ParseMarkdown(raw)
-		os.WriteFile(path, html, 0600)
-
+		parseFunc(path)
 		return nil
 	})
+}
+
+func parseFunc(path string) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+
+	html := parser.ParseMarkdown(raw)
+
+	path = strings.Replace(path, ".md", ".html", 1)
+	newPath := fmt.Sprintf("%s/%s", public, path)
+
+	if err := os.WriteFile(newPath, html, 0600); err != nil {
+		panic(err)
+	}
 }

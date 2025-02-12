@@ -1,60 +1,44 @@
 package generator
 
 import (
-	"fmt"
-	"homestead/lib"
 	"os"
-	"path/filepath"
-	"strings"
 	"testing"
+	f "testing/fstest"
 )
 
-const homestead string = "homestead"
-const test string = "test"
+const (
+	assetsT string = "assets"
+	postsT  string = "posts"
+	indexT  string = "index"
+	publicT string = "public"
+)
 
-// Manual tests
-func TestCopyResources(t *testing.T) {
-	src := getTestDir()
-	pub := fmt.Sprintf("%s/%s", src, lib.PublicDir)
-
-	resources := lib.LocalizeResourcePaths(src)
-	copyResources(resources, pub)
+var memfs = f.MapFS{
+	assetsT: &f.MapFile{},
+	postsT:  &f.MapFile{},
+	indexT:  &f.MapFile{},
+	publicT: &f.MapFile{},
 }
 
-func TestGeneratePosts(t *testing.T) {
-	src := getTestDir()
-	pub := fmt.Sprintf("%s/%s", getTestDir(), lib.PublicDir)
-	posts := fmt.Sprintf("%s/%s", src, lib.PostsDir)
+func TestCopy(t *testing.T) {
+	fsys = memfs
+	copy(assetsT)
 
-	resources := lib.LocalizeResourcePaths(src)
-	copyResources(resources, pub)
-
-	generatePosts(posts, pub)
-}
-
-func TestGenerateStaticContent(t *testing.T) {
-	src := getTestDir()
-
-	GenerateStaticContent(src)
-}
-
-func getTestDir() string {
-	path, err := os.Executable()
-	if err != nil {
-		panic(err)
+	_, ok := memfs[publicT]
+	if !ok {
+		t.Errorf("Public was not created")
 	}
+}
 
-	complements := strings.Split(path, "/")
-	for idx, complement := range complements {
-		if complement == homestead {
-			new := strings.Join(complements[:idx+1], "/")
-			new = fmt.Sprintf("/%s/%s", new, test)
+func TestParser(t *testing.T) {
 
-			return filepath.Clean(new)
-		} else {
-			continue
-		}
-	}
+}
 
-	return ""
+func createTestingEnv(t *testing.T) string {
+	path := t.TempDir()
+
+	os.Mkdir(assetsT, 0777)
+	os.Mkdir(postsT, 0777)
+
+	return path
 }

@@ -1,9 +1,5 @@
 package generator
 
-import (
-	"fmt"
-)
-
 type Operation int
 
 const (
@@ -16,15 +12,4 @@ var resourcePaths = map[string]Operation{
 	"index.html": Copy,
 	"pages":      Parse,
 	"posts":      Parse,
-}
-
-func localizeResourcePaths(root string) []string {
-	var tmp []string
-
-	for _, path := range resourcePaths {
-		new := fmt.Sprintf("%s/%s", root, path)
-		tmp = append(tmp, new)
-	}
-
-	return tmp
 }

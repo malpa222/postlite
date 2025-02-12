@@ -1,26 +1,18 @@
 package server
 
 import (
-	"homestead/lib/blogfsys"
+	"io/fs"
 	"log"
 	"net/http"
-	"path/filepath"
 )
 
 type ServerCFG struct {
-	Root  string
 	Port  string
 	HTTPS bool
 }
 
-func Serve(cfg ServerCFG) {
-	root, err := filepath.Abs(cfg.Root)
-	if err != nil {
-		log.Fatalf("Malformed path: %s", err)
-	}
-
-	fs := blogfsys.New(root)
-	server := http.FileServerFS(fs)
+func Serve(fsys fs.FS, cfg ServerCFG) {
+	server := http.FileServerFS(fsys)
 	http.Handle("/", server)
 
 	log.Printf("Listening on %s ...", cfg.Port)

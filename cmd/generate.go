@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"homestead/lib/blogfsys"
 	"homestead/lib/generator"
 	"log"
 
@@ -21,7 +22,8 @@ var generateCmd = &cobra.Command{
 			log.Fatalf("The path flag has not been set: %v", err)
 		}
 
-		generator.GenerateStaticContent(pathF)
+		fsys := blogfsys.New(pathF)
+		generator.GenerateStaticContent(fsys)
 	},
 }
 

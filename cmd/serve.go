@@ -1,14 +1,15 @@
 package cmd
 
 import (
+	"homestead/lib/blogfsys"
 	"homestead/lib/server"
 	"log"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 const (
+	root  string = "root"
 	port  string = "port"
 	https string = "https"
 )
@@ -24,19 +25,25 @@ var serveCmd = &cobra.Command{
 			log.Fatalf("The port flag has not been set: %v", err)
 		}
 
+		rootF, err := cmd.PersistentFlags().GetString(port)
+		if err != nil {
+			log.Fatalf("The root flag has not been set: %v", err)
+		}
+
 		cfg := server.ServerCFG{
-			Root:  viper.GetString("ROOT_DIR"),
 			Port:  portF,
 			HTTPS: httpsF,
 		}
 
-		server.Serve(cfg)
+		fsys := blogfsys.New(rootF)
+		server.Serve(fsys, cfg)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(serveCmd)
 
+	serveCmd.PersistentFlags().String(root, ".", "The path to the website source")
 	serveCmd.PersistentFlags().String(port, ":80", "Sets the port of the server")
 	serveCmd.PersistentFlags().Bool(https, true, "Enables or disables HTTPS")
 }
