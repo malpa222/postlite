@@ -22,7 +22,11 @@ var generateCmd = &cobra.Command{
 			log.Fatalf("The path flag has not been set: %v", err)
 		}
 
-		fsys := blogfsys.New(pathF)
+		fsys, err := blogfsys.New(pathF)
+		if err != nil {
+			log.Fatalf("Couldn't generate: %v", err)
+		}
+
 		generator.GenerateStaticContent(fsys)
 	},
 }

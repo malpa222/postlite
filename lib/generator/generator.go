@@ -1,11 +1,9 @@
 package generator
 
 import (
-	"fmt"
 	b "homestead/lib/blogfsys"
 	"homestead/lib/parser"
 	"io/fs"
-	"os"
 	"strings"
 )
 
@@ -25,7 +23,6 @@ var fsys b.BlogFsys
 
 func GenerateStaticContent(fs b.BlogFsys) {
 	fsys = fs
-	cleanPublic()
 
 	for path, resource := range resourcePaths {
 		switch resource {
@@ -37,32 +34,16 @@ func GenerateStaticContent(fs b.BlogFsys) {
 	}
 }
 
-func cleanPublic() {
-	os.RemoveAll(public)
-	os.Mkdir(public, 0666) // FIXME: FIX THIS SHITTT!!!!!!
-}
-
-func copy(path string) {
-	sub, err := fsys.Sub(path)
-	if err != nil {
-		panic(err)
-	}
-
-	path = fmt.Sprintf("%s/%s", public, path)
-	if err := os.CopyFS(path, sub); err != nil {
+func copy(source string) {
+	if err := fsys.CopyToPublic(source); err != nil {
 		panic(err)
 	}
 }
 
 func parse(path string) {
-	sub, err := fsys.Sub(path)
-	if err != nil {
-		panic(err)
-	}
-
-	fs.WalkDir(sub, path, func(path string, d fs.DirEntry, err error) error {
+	fs.WalkDir(fsys, path, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return err
+			panic(err)
 		}
 
 		if d.IsDir() {
@@ -75,17 +56,23 @@ func parse(path string) {
 }
 
 func parseFunc(path string) {
-	raw, err := os.ReadFile(path)
+	var md []byte
+
+	file, err := fsys.Open(path)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	_, err = file.Read(md)
 	if err != nil {
 		panic(err)
 	}
 
-	html := parser.ParseMarkdown(raw)
+	html := parser.ParseMarkdown(md)
+	newPath := strings.Replace(path, ".md", ".html", 1)
 
-	path = strings.Replace(path, ".md", ".html", 1)
-	newPath := fmt.Sprintf("%s/%s", public, path)
-
-	if err := os.WriteFile(newPath, html, 0600); err != nil {
+	if err := fsys.WriteToPublic(newPath, html); err != nil {
 		panic(err)
 	}
 }

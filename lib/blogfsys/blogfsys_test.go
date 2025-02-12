@@ -72,6 +72,8 @@ func TestSub(t *testing.T) {
 
 func createTestingEnv(t *testing.T) string {
 	path := t.TempDir()
+	t.Cleanup(func() { os.RemoveAll(path) })
+
 	subdir := fmt.Sprintf("%s/%s", path, subdir)
 	testfile := fmt.Sprintf("%s/%s", subdir, testfile)
 

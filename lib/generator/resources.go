@@ -8,8 +8,7 @@ const (
 )
 
 var resourcePaths = map[string]Operation{
-	"assets":     Copy,
+	"assets/":    Copy,
 	"index.html": Copy,
-	"pages":      Parse,
-	"posts":      Parse,
+	"posts/":     Parse,
 }

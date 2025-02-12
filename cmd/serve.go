@@ -35,7 +35,11 @@ var serveCmd = &cobra.Command{
 			HTTPS: httpsF,
 		}
 
-		fsys := blogfsys.New(rootF)
+		fsys, err := blogfsys.New(rootF)
+		if err != nil {
+			log.Fatalf("Couldn't generate: %v", err)
+		}
+
 		server.Serve(fsys, cfg)
 	},
 }

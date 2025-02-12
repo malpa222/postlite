@@ -1,44 +1,74 @@
 package generator
 
 import (
+	"homestead/lib/blogfsys"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
-	f "testing/fstest"
 )
 
 const (
-	assetsT string = "assets"
-	postsT  string = "posts"
-	indexT  string = "index"
-	publicT string = "public"
+	assetsT   string = "assets"
+	postsT    string = "posts"
+	publicT   string = "public"
+	indexT    string = "index.html"
+	testfileT string = "test.jpg"
+	testpostT string = "testpost.md"
 )
 
-var memfs = f.MapFS{
-	assetsT: &f.MapFile{},
-	postsT:  &f.MapFile{},
-	indexT:  &f.MapFile{},
-	publicT: &f.MapFile{},
-}
-
 func TestCopy(t *testing.T) {
-	fsys = memfs
+	target := filepath.Join(publicT, assetsT, testfileT) // public/assets/test.jpg
+	temp := createTestingEnv(t)
+
+	fsys, _ = blogfsys.New(temp)
 	copy(assetsT)
 
-	_, ok := memfs[publicT]
-	if !ok {
-		t.Errorf("Public was not created")
+	_, err := fsys.Stat(target)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
-func TestParser(t *testing.T) {
+func TestParse(t *testing.T) {
+	post := strings.Replace(testpostT, ".md", ".html", 1)
+	target := filepath.Join(publicT, postsT, post) // public/assets/testpost.html
+	temp := createTestingEnv(t)
 
+	fsys, _ = blogfsys.New(temp)
+	parse(postsT)
+
+	_, err := fsys.Stat(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestGenerateStaticContent(t *testing.T) {
+	temp := createTestingEnv(t)
+
+	fsys, _ = blogfsys.New(temp)
+	GenerateStaticContent(fsys)
 }
 
 func createTestingEnv(t *testing.T) string {
-	path := t.TempDir()
+	temp := t.TempDir()
+	t.Cleanup(func() { os.RemoveAll(temp) })
 
-	os.Mkdir(assetsT, 0777)
-	os.Mkdir(postsT, 0777)
+	// assets
+	assets := filepath.Join(temp, assetsT)
+	os.Mkdir(assets, 0777)
+	testfile := filepath.Join(assets, testfileT)
+	os.Create(testfile)
 
-	return path
+	// posts
+	posts := filepath.Join(temp, postsT)
+	os.Mkdir(posts, 0777)
+	testpost := filepath.Join(posts, testpostT)
+	os.Create(testpost)
+
+	// index
+	os.Create(filepath.Join(temp, indexT))
+
+	return temp
 }
