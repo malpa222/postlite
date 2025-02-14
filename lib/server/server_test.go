@@ -19,7 +19,9 @@ const (
 
 func TestServe(t *testing.T) {
 	temp := createTestingEnv(t)
+
 	fsys, _ := blogfsys.New(temp)
+	generator.GenerateStaticContent(fsys)
 
 	cfg := ServerCFG{
 		Port:  ":8080",
@@ -29,7 +31,7 @@ func TestServe(t *testing.T) {
 	Serve(fsys, cfg)
 }
 
-func createTestingEnv(fsys blogfsys.BlogFsys, t *testing.T) string {
+func createTestingEnv(t *testing.T) string {
 	temp := t.TempDir()
 	t.Cleanup(func() { os.RemoveAll(temp) })
 
@@ -47,8 +49,6 @@ func createTestingEnv(fsys blogfsys.BlogFsys, t *testing.T) string {
 
 	// index
 	os.Create(filepath.Join(temp, indexT))
-
-	generator.GenerateStaticContent(fsys)
 
 	return temp
 }

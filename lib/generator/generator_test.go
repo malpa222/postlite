@@ -18,8 +18,9 @@ const (
 )
 
 func TestCopy(t *testing.T) {
-	target := filepath.Join(publicT, assetsT, testfileT) // public/assets/test.jpg
 	temp := createTestingEnv(t)
+
+	target := filepath.Join(publicT, assetsT, testfileT) // public/assets/test.jpg
 
 	fsys, _ = blogfsys.New(temp)
 	copy(assetsT)
@@ -31,9 +32,10 @@ func TestCopy(t *testing.T) {
 }
 
 func TestParse(t *testing.T) {
+	temp := createTestingEnv(t)
+
 	post := strings.Replace(testpostT, ".md", ".html", 1)
 	target := filepath.Join(publicT, postsT, post) // public/assets/testpost.html
-	temp := createTestingEnv(t)
 
 	fsys, _ = blogfsys.New(temp)
 	parse(postsT)
@@ -69,6 +71,8 @@ func createTestingEnv(t *testing.T) string {
 
 	// index
 	os.Create(filepath.Join(temp, indexT))
+
+	t.Log(temp)
 
 	return temp
 }

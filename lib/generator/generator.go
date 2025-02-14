@@ -17,8 +17,6 @@ import (
 // |   |__ images
 // |-- public     	<--- generated content + resources
 
-const public string = "public"
-
 var fsys b.BlogFsys
 
 func GenerateStaticContent(fs b.BlogFsys) {

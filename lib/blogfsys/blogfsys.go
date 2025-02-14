@@ -68,12 +68,35 @@ func (b *blogFsys) WriteToPublic(target string, data []byte) error {
 func (b *blogFsys) CopyToPublic(source string) error {
 	target := filepath.Join(b.public, source)
 
-	sub, err := b.Sub(source)
+	info, err := b.Stat(source)
 	if err != nil {
 		return err
 	}
 
-	return os.CopyFS(target, sub)
+	if info.IsDir() {
+		sub, err := b.Sub(source)
+		if err != nil {
+			return err
+		}
+
+		return os.CopyFS(target, sub)
+	}
+
+	file, err := b.Open(source)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	var data []byte
+	file.Read(data)
+
+	err = os.WriteFile(target, data, 0666)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (b *blogFsys) setupPublic() error {
