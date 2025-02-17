@@ -15,41 +15,35 @@ type BlogFsys interface {
 
 	WriteToPublic(target string, data []byte) error
 	CopyToPublic(source string) error
+
+	GetBlogDirs() ([]string, error)
+	GetMDFiles() ([]string, error)
 }
 
 type blogFsys struct {
 	root   string
 	public string
+
+	blogDirs []string
+	mdFiles  []string
 }
 
 func New(root string) (BlogFsys, error) {
-	var fsys blogFsys
-
-	root = filepath.Clean(root)
-	if _, err := os.Stat(root); err != nil {
-		return nil, err
-	}
-
-	if filepath.IsLocal(root) {
-		tmp, err := filepath.Abs(root)
-		if err != nil {
-			return nil, err
-		}
-
-		root = tmp
-	}
-
-	fsys = blogFsys{
-		root:   root,
-		public: filepath.Join(root, "public"),
-	}
-
-	err := fsys.setupPublic()
+	root, err := checkPath(root)
 	if err != nil {
 		return nil, err
 	}
 
-	return &fsys, nil
+	fsys := &blogFsys{
+		root:   root,
+		public: filepath.Join(root, "public"),
+	}
+
+	if err = fsys.setupFileTree(); err != nil {
+		return fsys, err
+	}
+
+	return fsys, nil
 }
 
 // ---- Blog related functions
@@ -99,11 +93,92 @@ func (b *blogFsys) CopyToPublic(source string) error {
 	return nil
 }
 
-func (b *blogFsys) setupPublic() error {
+// Returns a list of paths to md files.
+// All paths are relative to the filesystem root.
+func (b *blogFsys) GetMDFiles() (files []string, err error) {
+	if b.mdFiles != nil {
+		return b.mdFiles, err
+	}
+
+	err = fs.WalkDir(b, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			return nil
+		}
+
+		if filepath.Ext(path) == ".md" {
+			files = append(files, path)
+		}
+
+		return nil
+	})
+
+	return files, err
+}
+
+// Returns a list of paths to blog directories.
+// NOTE: The directories are only from the FIRST level of the blog file tree.
+func (b *blogFsys) GetBlogDirs() (dirs []string, err error) {
+	if b.blogDirs != nil {
+		return b.blogDirs, err
+	}
+
+	entries, err := os.ReadDir(b.root)
+	for _, entry := range entries {
+		if entry.IsDir() && entry.Name() != "posts" {
+			dirs = append(dirs, entry.Name())
+		}
+	}
+
+	return dirs, err
+}
+
+// ---- FS related implementations
+
+func (b *blogFsys) Open(name string) (fs.File, error) {
+	path := b.absPath(name)
+
+	return os.Open(path)
+}
+
+func (b *blogFsys) Stat(name string) (fs.FileInfo, error) {
+	path := b.absPath(name)
+
+	return os.Stat(path)
+}
+
+func (b *blogFsys) Sub(dir string) (fs.FS, error) {
+	if _, err := b.Stat(dir); err != nil {
+		return nil, err
+	}
+
+	path := b.absPath(dir)
+	sub := os.DirFS(path)
+
+	return sub, nil
+}
+
+// ---- Internal methods
+
+func (b *blogFsys) setupFileTree() error {
 	os.Remove(b.public)
 
-	err := b.createDir(b.public)
-	if err != nil {
+	if files, err := b.GetMDFiles(); err != nil {
+		return err
+	} else {
+		b.mdFiles = files
+	}
+
+	if dirs, err := b.GetBlogDirs(); err != nil {
+		return err
+	} else {
+		b.blogDirs = dirs
+	}
+
+	if err := b.createDir(b.public); err != nil {
 		return err
 	}
 
@@ -130,27 +205,22 @@ func (b *blogFsys) absPath(path string) string {
 	return filepath.Join(b.root, path)
 }
 
-// ---- FS implementation
+// ---- Utilities
 
-func (b *blogFsys) Open(name string) (fs.File, error) {
-	path := b.absPath(name)
-
-	return os.Open(path)
-}
-
-func (b *blogFsys) Stat(name string) (fs.FileInfo, error) {
-	path := b.absPath(name)
-
-	return os.Stat(path)
-}
-
-func (b *blogFsys) Sub(dir string) (fs.FS, error) {
-	if _, err := b.Stat(dir); err != nil {
-		return nil, err
+func checkPath(path string) (root string, err error) {
+	root = filepath.Clean(path)
+	if _, err := os.Stat(root); err != nil {
+		return root, err
 	}
 
-	path := b.absPath(dir)
-	sub := os.DirFS(path)
+	if !filepath.IsAbs(root) {
+		tmp, err := filepath.Abs(root)
+		if err != nil {
+			return root, err
+		}
 
-	return sub, nil
+		root = tmp
+	}
+
+	return root, err
 }

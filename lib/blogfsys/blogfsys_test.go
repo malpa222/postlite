@@ -1,19 +1,16 @@
 package blogfsys
 
 import (
-	"fmt"
-	"os"
 	"path/filepath"
 	"testing"
 )
 
-const subdir string = "subdir"
-const testfile string = "test.txt"
+const testDir string = "../../test"
+const testSubDir string = "assets/"
+const testFile string = "index.md"
 
-func TestNewHappy(t *testing.T) {
-	path := createTestingEnv(t)
-
-	if _, err := New(path); err != nil {
+func TestNew(t *testing.T) {
+	if _, err := New(testDir); err != nil {
 		t.Fatal(err)
 	}
 
@@ -23,13 +20,11 @@ func TestNewHappy(t *testing.T) {
 	}
 }
 
-func TestOpenHappy(t *testing.T) {
-	path := createTestingEnv(t)
-	fsys, _ := New(path)
+func TestOpen(t *testing.T) {
+	fsys, _ := New(testDir)
 
 	// Happy flow
-	testfile := filepath.Join(subdir, testfile)
-	if _, err := fsys.Open(testfile); err != nil {
+	if _, err := fsys.Open(testFile); err != nil {
 		t.Fatal(err)
 	}
 
@@ -40,12 +35,10 @@ func TestOpenHappy(t *testing.T) {
 }
 
 func TestStat(t *testing.T) {
-	path := createTestingEnv(t)
-	fsys, _ := New(path)
+	fsys, _ := New(testDir)
 
 	// Happy flow
-	testfile := filepath.Join(subdir, testfile)
-	if _, err := fsys.Stat(testfile); err != nil {
+	if _, err := fsys.Stat(testFile); err != nil {
 		t.Fatal(err)
 	}
 
@@ -56,11 +49,10 @@ func TestStat(t *testing.T) {
 }
 
 func TestSub(t *testing.T) {
-	path := createTestingEnv(t)
-	fsys, _ := New(path)
+	fsys, _ := New(testDir)
 
 	// Happy flow
-	if _, err := fsys.Sub(subdir); err != nil {
+	if _, err := fsys.Sub(testSubDir); err != nil {
 		t.Fatal(err)
 	}
 
@@ -70,15 +62,21 @@ func TestSub(t *testing.T) {
 	}
 }
 
-func createTestingEnv(t *testing.T) string {
-	path := t.TempDir()
-	t.Cleanup(func() { os.RemoveAll(path) })
+func TestGetMDFiles(t *testing.T) {
+	var want int = 2
 
-	subdir := fmt.Sprintf("%s/%s", path, subdir)
-	testfile := fmt.Sprintf("%s/%s", subdir, testfile)
+	fsys, _ := New(testDir)
 
-	os.MkdirAll(subdir, 0777)
-	os.Create(testfile)
-
-	return path
+	// Happy flow
+	if files, err := fsys.GetMDFiles(); err != nil {
+		t.Fatal(err)
+	} else if len(files) != want {
+		t.Fatalf("Expected 2 md files, got: %d", len(files))
+	} else {
+		for _, file := range files {
+			if filepath.Ext(file) != ".md" {
+				t.Fatalf("Expected only md files, found: %s", file)
+			}
+		}
+	}
 }

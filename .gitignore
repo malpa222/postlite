@@ -4,5 +4,5 @@
 main
 homestead
 
-# site generated in tests
+# testing
 test/public

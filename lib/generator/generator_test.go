@@ -2,77 +2,52 @@ package generator
 
 import (
 	"homestead/lib/blogfsys"
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 )
 
 const (
-	assetsT   string = "assets"
-	postsT    string = "posts"
-	publicT   string = "public"
-	indexT    string = "index.html"
-	testfileT string = "test.jpg"
-	testpostT string = "testpost.md"
+	testDir   string = "../../test"
+	testAsset string = "public/assets/apple.jpg"
+	testIndex string = "public/index.html"
+	testPost  string = "public/posts/post.html"
 )
 
 func TestCopy(t *testing.T) {
-	temp := createTestingEnv(t)
+	fsys, _ = blogfsys.New(testDir)
 
-	target := filepath.Join(publicT, assetsT, testfileT) // public/assets/test.jpg
+	dirs, err := fsys.GetBlogDirs()
+	if err != nil {
+		t.Fatal(err)
+	}
+	copy(dirs)
 
-	fsys, _ = blogfsys.New(temp)
-	copy(assetsT)
-
-	_, err := fsys.Stat(target)
+	_, err = fsys.Stat(testAsset)
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestParse(t *testing.T) {
-	temp := createTestingEnv(t)
+	fsys, _ = blogfsys.New(testDir)
 
-	post := strings.Replace(testpostT, ".md", ".html", 1)
-	target := filepath.Join(publicT, postsT, post) // public/assets/testpost.html
+	files, err := fsys.GetMDFiles()
+	if err != nil {
+		t.Fatal(err)
+	}
+	parse(files)
 
-	fsys, _ = blogfsys.New(temp)
-	parse(postsT)
+	_, err = fsys.Stat(testIndex)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	_, err := fsys.Stat(target)
+	_, err = fsys.Stat(testPost)
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestGenerateStaticContent(t *testing.T) {
-	temp := createTestingEnv(t)
-
-	fsys, _ = blogfsys.New(temp)
+	fsys, _ = blogfsys.New(testDir)
 	GenerateStaticContent(fsys)
-}
-
-func createTestingEnv(t *testing.T) string {
-	temp := t.TempDir()
-	t.Cleanup(func() { os.RemoveAll(temp) })
-
-	// assets
-	assets := filepath.Join(temp, assetsT)
-	os.Mkdir(assets, 0777)
-	testfile := filepath.Join(assets, testfileT)
-	os.Create(testfile)
-
-	// posts
-	posts := filepath.Join(temp, postsT)
-	os.Mkdir(posts, 0777)
-	testpost := filepath.Join(posts, testpostT)
-	os.Create(testpost)
-
-	// index
-	os.Create(filepath.Join(temp, indexT))
-
-	t.Log(temp)
-
-	return temp
 }

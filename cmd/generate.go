@@ -18,9 +18,6 @@ var generateCmd = &cobra.Command{
 	Short: "Generates the static site content",
 	Run: func(cmd *cobra.Command, args []string) {
 		pathF, err := cmd.PersistentFlags().GetString(path)
-		if err != nil {
-			log.Fatalf("The path flag has not been set: %v", err)
-		}
 
 		fsys, err := blogfsys.New(pathF)
 		if err != nil {
@@ -34,5 +31,7 @@ var generateCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(generateCmd)
 
-	generateCmd.PersistentFlags().String(path, ".", "The path to the website source")
+	generateCmd.LocalFlags().String(path, ".", "The path to the website source")
+	generateCmd.MarkFlagDirname(path)
+	generateCmd.MarkFlagRequired(path)
 }

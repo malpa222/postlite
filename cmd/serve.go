@@ -20,15 +20,9 @@ var serveCmd = &cobra.Command{
 	Short: "Starts the server",
 	Run: func(cmd *cobra.Command, args []string) {
 		httpsF, _ := cmd.PersistentFlags().GetBool(https)
-		portF, err := cmd.PersistentFlags().GetString(port)
-		if err != nil {
-			log.Fatalf("The port flag has not been set: %v", err)
-		}
+		portF, _ := cmd.PersistentFlags().GetString(port)
 
-		rootF, err := cmd.PersistentFlags().GetString(port)
-		if err != nil {
-			log.Fatalf("The root flag has not been set: %v", err)
-		}
+		rootF, _ := cmd.PersistentFlags().GetString(port)
 
 		cfg := server.ServerCFG{
 			Port:  portF,
@@ -37,7 +31,7 @@ var serveCmd = &cobra.Command{
 
 		fsys, err := blogfsys.New(rootF)
 		if err != nil {
-			log.Fatalf("Couldn't generate: %v", err)
+			log.Fatalf("Couldn't get filesystem: %v", err)
 		}
 
 		server.Serve(fsys, cfg)
@@ -47,7 +41,12 @@ var serveCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(serveCmd)
 
-	serveCmd.PersistentFlags().String(root, ".", "The path to the website source")
-	serveCmd.PersistentFlags().String(port, ":80", "Sets the port of the server")
+	serveCmd.LocalFlags().String(root, ".", "The path to the website source")
+	serveCmd.MarkFlagDirname(root)
+	serveCmd.MarkFlagRequired(root)
+
+	serveCmd.LocalFlags().String(port, ":80", "Sets the port of the server")
+	serveCmd.MarkFlagRequired(port)
+
 	serveCmd.PersistentFlags().Bool(https, true, "Enables or disables HTTPS")
 }
