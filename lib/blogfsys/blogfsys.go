@@ -33,6 +33,11 @@ var fsys *blogFsys
 const public string = "public"
 
 func NewBlogFsys(root string) (BlogFsys, error) {
+	root, err := filepath.Abs(root)
+	if err != nil {
+		return nil, err
+	}
+
 	fsys = &blogFsys{
 		root: root,
 	}
@@ -62,17 +67,14 @@ func (b *blogFsys) CopyToPublic(source string) error {
 			return err
 		}
 
+		target := filepath.Join(public, path)
+
 		if d.IsDir() {
-			return nil
+			return b.createDir(target)
 		}
 
 		data, err := b.ReadFile(path)
 		if err != nil {
-			return err
-		}
-
-		target := filepath.Join(public, path)
-		if err := b.createDir(target); err != nil {
 			return err
 		}
 
@@ -139,10 +141,7 @@ func (b *blogFsys) ReadFile(name string) (data []byte, err error) {
 	defer file.Close()
 
 	reader := bufio.NewReader(file)
-	var buf []byte = make([]byte, 4096) // 4kb buffer
-
-	_, err = io.ReadFull(reader, buf)
-	return data, err
+	return io.ReadAll(reader)
 }
 
 // ---- Utilities
@@ -176,11 +175,14 @@ func (b *blogFsys) writeFile(data []byte, path string) error {
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
 	writer := bufio.NewWriter(file)
-	_, err = writer.Write(data)
+	if _, err = writer.Write(data); err != nil {
+		return err
+	}
 
-	return err
+	return writer.Flush()
 }
 
 func (b *blogFsys) createDir(path string) error {
