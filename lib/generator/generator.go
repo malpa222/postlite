@@ -46,15 +46,7 @@ func copy(dirs []string) {
 
 func parse(paths []string) {
 	for _, path := range paths {
-		var md []byte
-
-		file, err := fsys.Open(path)
-		if err != nil {
-			panic(err)
-		}
-		defer file.Close()
-
-		_, err = file.Read(md)
+		md, err := fsys.ReadFile(path)
 		if err != nil {
 			panic(err)
 		}

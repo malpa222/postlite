@@ -1,6 +1,8 @@
 package blogfsys
 
 import (
+	"bufio"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -10,8 +12,7 @@ import (
 
 type BlogFsys interface {
 	fs.FS
-	fs.SubFS
-	fs.StatFS
+	fs.ReadFileFS
 
 	WriteToPublic(target string, data []byte) error
 	CopyToPublic(source string) error
@@ -21,76 +22,62 @@ type BlogFsys interface {
 }
 
 type blogFsys struct {
-	root   string
-	public string
+	root string
 
 	blogDirs []string
 	mdFiles  []string
 }
 
-func New(root string) (BlogFsys, error) {
-	root, err := checkPath(root)
-	if err != nil {
-		return nil, err
+var fsys *blogFsys
+
+const public string = "public"
+
+func NewBlogFsys(root string) (BlogFsys, error) {
+	fsys = &blogFsys{
+		root: root,
 	}
 
-	fsys := &blogFsys{
-		root:   root,
-		public: filepath.Join(root, "public"),
-	}
-
-	if err = fsys.setupFileTree(); err != nil {
+	if err := fsys.setupFileTree(); err != nil {
 		return fsys, err
 	}
 
 	return fsys, nil
 }
 
-// ---- Blog related functions
-
 func (b *blogFsys) WriteToPublic(target string, data []byte) error {
-	target = filepath.Join(b.public, target)
+	target = filepath.Join(public, target)
 
-	err := b.createDir(target)
-	if err != nil {
+	dir := filepath.Dir(target)
+	if err := b.createDir(dir); err != nil {
 		return err
 	}
 
-	return os.WriteFile(target, data, 0666)
+	return b.writeFile(data, target)
+
 }
 
 func (b *blogFsys) CopyToPublic(source string) error {
-	target := filepath.Join(b.public, source)
-
-	info, err := b.Stat(source)
-	if err != nil {
-		return err
-	}
-
-	if info.IsDir() {
-		sub, err := b.Sub(source)
+	return fs.WalkDir(b, source, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		return os.CopyFS(target, sub)
-	}
+		if d.IsDir() {
+			return nil
+		}
 
-	file, err := b.Open(source)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+		data, err := b.ReadFile(path)
+		if err != nil {
+			return err
+		}
 
-	var data []byte
-	file.Read(data)
+		target := filepath.Join(public, path)
+		if err := b.createDir(target); err != nil {
+			return err
+		}
 
-	err = os.WriteFile(target, data, 0666)
-	if err != nil {
-		return err
-	}
-
-	return nil
+		return b.writeFile(data, target)
+	})
 }
 
 // Returns a list of paths to md files.
@@ -139,32 +126,29 @@ func (b *blogFsys) GetBlogDirs() (dirs []string, err error) {
 // ---- FS related implementations
 
 func (b *blogFsys) Open(name string) (fs.File, error) {
-	path := b.absPath(name)
+	path := filepath.Join(b.root, name)
 
 	return os.Open(path)
 }
 
-func (b *blogFsys) Stat(name string) (fs.FileInfo, error) {
-	path := b.absPath(name)
-
-	return os.Stat(path)
-}
-
-func (b *blogFsys) Sub(dir string) (fs.FS, error) {
-	if _, err := b.Stat(dir); err != nil {
-		return nil, err
+func (b *blogFsys) ReadFile(name string) (data []byte, err error) {
+	file, err := b.Open(name)
+	if err != nil {
+		return data, err
 	}
+	defer file.Close()
 
-	path := b.absPath(dir)
-	sub := os.DirFS(path)
+	reader := bufio.NewReader(file)
+	var buf []byte = make([]byte, 4096) // 4kb buffer
 
-	return sub, nil
+	_, err = io.ReadFull(reader, buf)
+	return data, err
 }
 
-// ---- Internal methods
+// ---- Utilities
 
 func (b *blogFsys) setupFileTree() error {
-	os.Remove(b.public)
+	b.removeDir(public)
 
 	if files, err := b.GetMDFiles(); err != nil {
 		return err
@@ -178,21 +162,31 @@ func (b *blogFsys) setupFileTree() error {
 		b.blogDirs = dirs
 	}
 
-	if err := b.createDir(b.public); err != nil {
+	if err := b.createDir(public); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// Expecting absolute path
-func (b *blogFsys) createDir(path string) error {
-	if !filepath.IsAbs(path) {
-		return &fs.PathError{} // FIXME: Return something more elaborate
+func (b *blogFsys) writeFile(data []byte, path string) error {
+	target := filepath.Join(b.root, path)
+
+	file, err := os.Create(target)
+	if err != nil {
+		return err
 	}
 
-	path = filepath.Dir(path)
-	err := os.MkdirAll(path, 0777) // FIXME: FIX THISSSS!!!!!!!
+	writer := bufio.NewWriter(file)
+	_, err = writer.Write(data)
+
+	return err
+}
+
+func (b *blogFsys) createDir(path string) error {
+	target := filepath.Join(b.root, path)
+
+	err := os.MkdirAll(target, 0777) // FIXME: FIX THISSSS!!!!!!!
 	if err != nil {
 		return err
 	}
@@ -200,27 +194,8 @@ func (b *blogFsys) createDir(path string) error {
 	return nil
 }
 
-func (b *blogFsys) absPath(path string) string {
-	path = filepath.Clean(path)
-	return filepath.Join(b.root, path)
-}
+func (b *blogFsys) removeDir(path string) {
+	target := filepath.Join(fsys.root, path)
 
-// ---- Utilities
-
-func checkPath(path string) (root string, err error) {
-	root = filepath.Clean(path)
-	if _, err := os.Stat(root); err != nil {
-		return root, err
-	}
-
-	if !filepath.IsAbs(root) {
-		tmp, err := filepath.Abs(root)
-		if err != nil {
-			return root, err
-		}
-
-		root = tmp
-	}
-
-	return root, err
+	os.RemoveAll(target)
 }

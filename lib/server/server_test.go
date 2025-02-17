@@ -20,7 +20,7 @@ const (
 func TestServe(t *testing.T) {
 	temp := createTestingEnv(t)
 
-	fsys, _ := blogfsys.New(temp)
+	fsys, _ := blogfsys.NewBlogFsys(temp)
 	generator.GenerateStaticContent(fsys)
 
 	cfg := ServerCFG{

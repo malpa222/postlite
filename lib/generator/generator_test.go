@@ -2,6 +2,7 @@ package generator
 
 import (
 	"homestead/lib/blogfsys"
+	"io/fs"
 	"testing"
 )
 
@@ -13,7 +14,7 @@ const (
 )
 
 func TestCopy(t *testing.T) {
-	fsys, _ = blogfsys.New(testDir)
+	fsys, _ = blogfsys.NewBlogFsys(testDir)
 
 	dirs, err := fsys.GetBlogDirs()
 	if err != nil {
@@ -21,14 +22,14 @@ func TestCopy(t *testing.T) {
 	}
 	copy(dirs)
 
-	_, err = fsys.Stat(testAsset)
+	_, err = fs.Stat(fsys, testAsset)
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestParse(t *testing.T) {
-	fsys, _ = blogfsys.New(testDir)
+	fsys, _ = blogfsys.NewBlogFsys(testDir)
 
 	files, err := fsys.GetMDFiles()
 	if err != nil {
@@ -36,18 +37,18 @@ func TestParse(t *testing.T) {
 	}
 	parse(files)
 
-	_, err = fsys.Stat(testIndex)
+	_, err = fs.Stat(fsys, testIndex)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = fsys.Stat(testPost)
+	_, err = fs.Stat(fsys, testPost)
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestGenerateStaticContent(t *testing.T) {
-	fsys, _ = blogfsys.New(testDir)
+	fsys, _ = blogfsys.NewBlogFsys(testDir)
 	GenerateStaticContent(fsys)
 }

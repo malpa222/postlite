@@ -6,22 +6,21 @@ import (
 )
 
 const testDir string = "../../test"
-const testSubDir string = "assets/"
 const testFile string = "index.md"
 
 func TestNew(t *testing.T) {
-	if _, err := New(testDir); err != nil {
+	if _, err := NewBlogFsys(testDir); err != nil {
 		t.Fatal(err)
 	}
 
 	// Non-existent file
-	if _, err := New("idonotexist"); err == nil {
+	if _, err := NewBlogFsys("idonotexist"); err == nil {
 		t.Fatal(err)
 	}
 }
 
 func TestOpen(t *testing.T) {
-	fsys, _ := New(testDir)
+	fsys, _ := NewBlogFsys(testDir)
 
 	// Happy flow
 	if _, err := fsys.Open(testFile); err != nil {
@@ -34,38 +33,10 @@ func TestOpen(t *testing.T) {
 	}
 }
 
-func TestStat(t *testing.T) {
-	fsys, _ := New(testDir)
-
-	// Happy flow
-	if _, err := fsys.Stat(testFile); err != nil {
-		t.Fatal(err)
-	}
-
-	// Non-existent file
-	if _, err := fsys.Stat("idonotexist"); err == nil {
-		t.Fatal(err)
-	}
-}
-
-func TestSub(t *testing.T) {
-	fsys, _ := New(testDir)
-
-	// Happy flow
-	if _, err := fsys.Sub(testSubDir); err != nil {
-		t.Fatal(err)
-	}
-
-	// Non-existent file
-	if _, err := fsys.Sub("idonotexist"); err == nil {
-		t.Fatal(err)
-	}
-}
-
 func TestGetMDFiles(t *testing.T) {
 	var want int = 2
 
-	fsys, _ := New(testDir)
+	fsys, _ := NewBlogFsys(testDir)
 
 	// Happy flow
 	if files, err := fsys.GetMDFiles(); err != nil {

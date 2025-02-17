@@ -29,7 +29,7 @@ var serveCmd = &cobra.Command{
 			HTTPS: httpsF,
 		}
 
-		fsys, err := blogfsys.New(rootF)
+		fsys, err := blogfsys.NewBlogFsys(rootF)
 		if err != nil {
 			log.Fatalf("Couldn't get filesystem: %v", err)
 		}

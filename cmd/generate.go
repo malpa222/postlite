@@ -19,7 +19,7 @@ var generateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		pathF, err := cmd.PersistentFlags().GetString(path)
 
-		fsys, err := blogfsys.New(pathF)
+		fsys, err := blogfsys.NewBlogFsys(pathF)
 		if err != nil {
 			log.Fatalf("Couldn't generate: %v", err)
 		}
