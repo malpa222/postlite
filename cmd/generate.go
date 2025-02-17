@@ -8,18 +8,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	path string = "path"
-)
+type generateFlags struct {
+	rootName string
+	rootVal  string
+}
+
+var gFlags = generateFlags{
+	rootName: "root",
+	rootVal:  ".",
+}
 
 // generateCmd represents the generate command
 var generateCmd = &cobra.Command{
 	Use:   "generate",
 	Short: "Generates the static site content",
 	Run: func(cmd *cobra.Command, args []string) {
-		pathF, err := cmd.PersistentFlags().GetString(path)
+		root, _ := cmd.LocalFlags().GetString(gFlags.rootName)
 
-		fsys, err := blogfsys.NewBlogFsys(pathF)
+		fsys, err := blogfsys.NewBlogFsys(root)
 		if err != nil {
 			log.Fatalf("Couldn't generate: %v", err)
 		}
@@ -31,7 +37,12 @@ var generateCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(generateCmd)
 
-	generateCmd.LocalFlags().String(path, ".", "The path to the website source")
-	generateCmd.MarkFlagDirname(path)
-	generateCmd.MarkFlagRequired(path)
+	generateCmd.Flags().StringVarP(
+		&gFlags.rootVal,
+		gFlags.rootName,
+		"r",
+		gFlags.rootVal,
+		"The path to the website's root")
+	generateCmd.MarkFlagDirname(gFlags.rootName)
+	generateCmd.MarkFlagRequired(gFlags.rootName)
 }

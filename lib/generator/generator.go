@@ -37,6 +37,8 @@ func GenerateStaticContent(fs b.BlogFsys) {
 
 func copy(dirs []string) {
 	for _, dir := range dirs {
+		log.Printf("Copying %s ...", dir)
+
 		err := fsys.CopyToPublic(dir)
 		if err != nil {
 			log.Printf("Copying failed: %s", err)
@@ -46,6 +48,8 @@ func copy(dirs []string) {
 
 func parse(paths []string) {
 	for _, path := range paths {
+		log.Printf("Parsing %s ...", path)
+
 		md, err := fsys.ReadFile(path)
 		if err != nil {
 			panic(err)

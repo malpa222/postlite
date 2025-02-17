@@ -50,5 +50,21 @@ func TestParse(t *testing.T) {
 
 func TestGenerateStaticContent(t *testing.T) {
 	fsys, _ = blogfsys.NewBlogFsys(testDir)
+
 	GenerateStaticContent(fsys)
+
+	_, err := fs.Stat(fsys, testIndex)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = fs.Stat(fsys, testPost)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = fs.Stat(fsys, testAsset)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
