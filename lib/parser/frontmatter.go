@@ -1,6 +1,6 @@
 package parser
 
-type BlogPost struct {
+type FrontMatter struct {
 	Title      string
 	Stylesheet string
 }

@@ -1,9 +1,8 @@
 package blogfsys
 
 import (
-	"bufio"
-	"io"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -12,94 +11,97 @@ import (
 
 type BlogFsys interface {
 	fs.FS
-	fs.ReadFileFS
 
-	WriteToPublic(target string, data []byte) error
-	CopyToPublic(source string) error
+	Clean(dir string) error
+	CopyBuf(dst string, buf []byte) error
+	CopyDir(src string, dst string) error
 
-	GetBlogDirs() ([]string, error)
-	GetMDFiles() ([]string, error)
+	Find(kind FileKind, maxDepth int) ([]BlogFile, error)
 }
 
 type blogFsys struct {
 	root string
-
-	blogDirs []string
-	mdFiles  []string
 }
 
 var fsys *blogFsys
 
-const public string = "public"
-
-func NewBlogFsys(root string) (BlogFsys, error) {
+func New(root string) BlogFsys {
 	root, err := filepath.Abs(root)
 	if err != nil {
-		return nil, err
+		log.Fatal(err)
 	}
 
 	fsys = &blogFsys{
 		root: root,
 	}
 
-	if err := fsys.setupFileTree(); err != nil {
-		return fsys, err
-	}
-
-	return fsys, nil
+	return fsys
 }
 
-func (b *blogFsys) WriteToPublic(target string, data []byte) error {
-	target = filepath.Join(public, target)
+func (b *blogFsys) Clean(dir string) error {
+	dir = filepath.Join(b.root, dir)
 
-	dir := filepath.Dir(target)
-	if err := b.createDir(dir); err != nil {
+	return cleanDir(dir)
+}
+
+func (b *blogFsys) CopyBuf(dst string, buf []byte) error {
+	dst = filepath.Join(b.root, dst)
+
+	dir := filepath.Dir(dst)
+	if err := createDir(dir); err != nil {
 		return err
 	}
 
-	return b.writeFile(data, target)
-
+	return writeFile(dst, buf)
 }
 
-func (b *blogFsys) CopyToPublic(source string) error {
-	return fs.WalkDir(b, source, func(path string, d fs.DirEntry, err error) error {
+func (b *blogFsys) CopyDir(src string, dst string) error {
+	return fs.WalkDir(b, src, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		target := filepath.Join(public, path)
+		src := filepath.Join(b.root, src)
+		dst := filepath.Join(b.root, dst)
 
 		if d.IsDir() {
-			return b.createDir(target)
+			return createDir(dst)
+		} else {
+			return copyFile(src, dst)
 		}
-
-		data, err := b.ReadFile(path)
-		if err != nil {
-			return err
-		}
-
-		return b.writeFile(data, target)
 	})
 }
 
-// Returns a list of paths to md files.
-// All paths are relative to the filesystem root.
-func (b *blogFsys) GetMDFiles() (files []string, err error) {
-	if b.mdFiles != nil {
-		return b.mdFiles, err
-	}
+// Find walks the directory tree up to maxDepth levels.
+// maxDepth == 1 : only root
+// maxDepth >= 2 : maxDepth
+// maxDepth <= 0 : full
+func (b *blogFsys) Find(kind FileKind, maxDepth int) (files []BlogFile, err error) {
+	var depth int = 0
 
 	err = fs.WalkDir(b, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		if d.IsDir() {
-			return nil
+		// Update the counter in case of positive maxDepth
+		if maxDepth > 0 && depth < maxDepth {
+			depth++
 		}
 
-		if filepath.Ext(path) == ".md" {
-			files = append(files, path)
+		// Add file to the list
+		fullpath := filepath.Join(b.root, path)
+		file := blogFile{Path: fullpath}
+
+		if info, err := file.Stat(); err != nil {
+			return err
+		} else if info == kind {
+			files = append(files, file)
+		}
+
+		// Skip dir if necessary
+		if depth >= maxDepth && d.IsDir() {
+			return fs.SkipDir
 		}
 
 		return nil
@@ -108,96 +110,10 @@ func (b *blogFsys) GetMDFiles() (files []string, err error) {
 	return files, err
 }
 
-// Returns a list of paths to blog directories.
-// NOTE: The directories are only from the FIRST level of the blog file tree.
-func (b *blogFsys) GetBlogDirs() (dirs []string, err error) {
-	if b.blogDirs != nil {
-		return b.blogDirs, err
-	}
-
-	entries, err := os.ReadDir(b.root)
-	for _, entry := range entries {
-		if entry.IsDir() && entry.Name() != "posts" {
-			dirs = append(dirs, entry.Name())
-		}
-	}
-
-	return dirs, err
-}
-
 // ---- FS related implementations
 
 func (b *blogFsys) Open(name string) (fs.File, error) {
 	path := filepath.Join(b.root, name)
 
 	return os.Open(path)
-}
-
-func (b *blogFsys) ReadFile(name string) (data []byte, err error) {
-	file, err := b.Open(name)
-	if err != nil {
-		return data, err
-	}
-	defer file.Close()
-
-	reader := bufio.NewReader(file)
-	return io.ReadAll(reader)
-}
-
-// ---- Utilities
-
-func (b *blogFsys) setupFileTree() error {
-	b.removeDir(public)
-
-	if files, err := b.GetMDFiles(); err != nil {
-		return err
-	} else {
-		b.mdFiles = files
-	}
-
-	if dirs, err := b.GetBlogDirs(); err != nil {
-		return err
-	} else {
-		b.blogDirs = dirs
-	}
-
-	if err := b.createDir(public); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (b *blogFsys) writeFile(data []byte, path string) error {
-	target := filepath.Join(b.root, path)
-
-	file, err := os.Create(target)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	writer := bufio.NewWriter(file)
-	if _, err = writer.Write(data); err != nil {
-		return err
-	}
-
-	return writer.Flush()
-}
-
-func (b *blogFsys) createDir(path string) error {
-	target := filepath.Join(b.root, path)
-
-	err := os.MkdirAll(target, 0777) // FIXME: FIX THISSSS!!!!!!!
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (b *blogFsys) removeDir(path string) {
-	target := filepath.Join(fsys.root, path)
-
-	os.RemoveAll(target)
 }

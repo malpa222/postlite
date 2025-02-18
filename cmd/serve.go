@@ -3,7 +3,6 @@ package cmd
 import (
 	"homestead/lib/blogfsys"
 	"homestead/lib/server"
-	"log"
 
 	"github.com/spf13/cobra"
 )
@@ -44,11 +43,7 @@ var serveCmd = &cobra.Command{
 			HTTPS: https,
 		}
 
-		fsys, err := blogfsys.NewBlogFsys(root)
-		if err != nil {
-			log.Fatalf("Couldn't get filesystem: %v", err)
-		}
-
+		fsys := blogfsys.New(root)
 		server.Serve(fsys, cfg)
 	},
 }
