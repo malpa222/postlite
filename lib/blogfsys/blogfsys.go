@@ -23,15 +23,13 @@ type blogFsys struct {
 	root string
 }
 
-var fsys *blogFsys
-
 func New(root string) BlogFsys {
 	root, err := filepath.Abs(root)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fsys = &blogFsys{
+	fsys := &blogFsys{
 		root: root,
 	}
 
