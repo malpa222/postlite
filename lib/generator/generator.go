@@ -45,10 +45,11 @@ func GenerateStaticContent(fs b.BlogFsys) {
 func copy(dirs []b.BlogFile) {
 	for _, dir := range dirs {
 		src := dir.GetPath()
+		dst := filepath.Join(public, src)
+
 		log.Printf("Copying %s ...", src)
 
-		dst := filepath.Join(public, src)
-		if err := fsys.CopyDir(src, dst); err != nil {
+		if err := fsys.Copy(dir, dst); err != nil {
 			log.Printf("Copying failed: %s", err)
 		}
 	}

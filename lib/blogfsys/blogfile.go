@@ -29,28 +29,31 @@ type BlogFile interface {
 
 type blogFile struct {
 	kind FileKind
-	path string
+
+	fullpath string
+	fspath   string
 }
 
-func NewBlogFile(path string, d fs.DirEntry) BlogFile {
+func NewBlogFile(fspath string, fullpath string, d fs.DirEntry) BlogFile {
 	var bfile blogFile = blogFile{
-		path: path,
-		kind: stat(d),
+		fullpath: fullpath,
+		fspath:   fspath,
+		kind:     stat(d),
 	}
 
-	return bfile
+	return &bfile
 }
 
-func (b blogFile) GetKind() FileKind {
+func (b *blogFile) GetKind() FileKind {
 	return b.kind
 }
 
-func (b blogFile) GetPath() string {
-	return b.path
+func (b *blogFile) GetPath() string {
+	return b.fspath
 }
 
-func (b blogFile) Read() ([]byte, error) {
-	return readFile(b.path)
+func (b *blogFile) Read() ([]byte, error) {
+	return readFile(b.fullpath)
 }
 
 func stat(d fs.DirEntry) FileKind {

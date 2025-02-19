@@ -1,6 +1,7 @@
 package blogfsys
 
 import (
+	"path/filepath"
 	"testing"
 )
 
@@ -58,44 +59,51 @@ func TestFindAll(t *testing.T) {
 }
 
 func TestCopyBuf(t *testing.T) {
+	fsys := getEnv()
+	dst := filepath.Join("public", testFile)
 
+	result, err := fsys.Find(MD, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	buf, err := result[0].Read()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := fsys.CopyBuf(dst, buf); err != nil {
+		t.Fatal(err)
+	}
 }
 
-func TestCopyDir(t *testing.T) {
+func TestCopyFile(t *testing.T) {
+	fsys := getEnv()
 
+	result, err := fsys.Find(MD, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Check manually
+	if err := fsys.Copy(result[0], "public"); err != nil {
+		t.Fatal(err)
+	}
 }
 
-// func TestGetMDFiles(t *testing.T) {
-// 	var want int = 2
+func TestCopydir(t *testing.T) {
+	fsys := getEnv()
 
-// 	fsys := New(testDir)
+	result, err := fsys.Find(Dir, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-// 	// Happy flow
-// 	if files, err := fsys.GetMDFiles(); err != nil {
-// 		t.Fatal(err)
-// 	} else if len(files) != want {
-// 		t.Fatalf("Expected %d md files, got: %d", want, len(files))
-// 	} else {
-// 		for _, file := range files {
-// 			if filepath.Ext(file) != ".md" {
-// 				t.Fatalf("Expected only md files, found: %s", file)
-// 			}
-// 		}
-// 	}
-// }
-
-// func TestGetBlogDirs(t *testing.T) {
-// 	var want int = 1
-
-// 	fsys, _ := NewBlogFsys(testDir)
-
-// 	dirs, err := fsys.GetBlogDirs()
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	} else if len(dirs) != want {
-// 		t.Fatalf("Expected only %d dir, found %d", want, len(dirs))
-// 	}
-// }
+	// Check manually
+	if err := fsys.Copy(result[0], "public"); err != nil {
+		t.Fatal(err)
+	}
+}
 
 func getEnv() BlogFsys {
 	fsys := New(testDir)
