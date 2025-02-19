@@ -8,7 +8,7 @@ const testDir string = "../../test"
 const testFile string = "index.md"
 
 func TestOpen(t *testing.T) {
-	fsys := New(testDir)
+	fsys := getEnv()
 
 	// Happy flow
 	if _, err := fsys.Open(testFile); err != nil {
@@ -21,8 +21,40 @@ func TestOpen(t *testing.T) {
 	}
 }
 
-func TestFind(t *testing.T) {
+func TestFindRoot(t *testing.T) {
+	var want int = 3
+	fsys := getEnv()
 
+	// Find only root directories
+	if found, err := fsys.Find(Dir, 1); err != nil {
+		t.Fatal(err)
+	} else if len(found) != want {
+		t.Fatalf("Expected %d dirs, found: %d", want, len(found))
+	}
+}
+
+func TestFindChildren(t *testing.T) {
+	var want int = 4
+	fsys := getEnv()
+
+	// Find only root directories
+	if found, err := fsys.Find(Dir, 2); err != nil {
+		t.Fatal(err)
+	} else if len(found) != want {
+		t.Fatalf("Expected %d dirs, found: %d", want, len(found))
+	}
+}
+
+func TestFindAll(t *testing.T) {
+	var want int = 2
+	fsys := getEnv()
+
+	// Find only root directories
+	if found, err := fsys.Find(MD, 0); err != nil {
+		t.Fatal(err)
+	} else if len(found) != want {
+		t.Fatalf("Expected %d .md files, found: %d", want, len(found))
+	}
 }
 
 func TestCopyBuf(t *testing.T) {
@@ -64,3 +96,10 @@ func TestCopyDir(t *testing.T) {
 // 		t.Fatalf("Expected only %d dir, found %d", want, len(dirs))
 // 	}
 // }
+
+func getEnv() BlogFsys {
+	fsys := New(testDir)
+	fsys.Clean("public")
+
+	return fsys
+}

@@ -59,14 +59,6 @@ func copyFile(src string, dst string) error {
 
 // ---- Directories
 
-func isDir(path string) (bool, error) {
-	if info, err := os.Stat(path); err != nil {
-		return false, err
-	} else {
-		return info.IsDir(), nil
-	}
-}
-
 func createDir(path string) error {
 	err := os.MkdirAll(path, 0777) // FIXME: FIX THISSSS!!!!!!!
 	if err != nil {

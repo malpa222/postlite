@@ -75,31 +75,38 @@ func (b *blogFsys) CopyDir(src string, dst string) error {
 // maxDepth >= 2 : maxDepth
 // maxDepth <= 0 : full
 func (b *blogFsys) Find(kind FileKind, maxDepth int) (files []BlogFile, err error) {
-	var depth int = 0
+	var root string = "."
+	var depth int = 1
 
-	err = fs.WalkDir(b, ".", func(path string, d fs.DirEntry, err error) error {
+	err = fs.WalkDir(b, root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		// Update the counter in case of positive maxDepth
-		if maxDepth > 0 && depth < maxDepth {
-			depth++
+		// Skip the root directory
+		if path == root {
+			return nil
 		}
 
-		// Add file to the list
+		// Check the file kind and update files accordingly
 		fullpath := filepath.Join(b.root, path)
-		file := blogFile{Path: fullpath}
-
-		if info, err := file.Stat(); err != nil {
-			return err
-		} else if info == kind {
+		file := NewBlogFile(fullpath, d)
+		if file.GetKind() == kind {
 			files = append(files, file)
 		}
 
-		// Skip dir if necessary
-		if depth >= maxDepth && d.IsDir() {
-			return fs.SkipDir
+		// Traverse the whole tree
+		if maxDepth <= 0 {
+			return nil
+		}
+
+		// Check and update depth
+		if d.IsDir() {
+			if depth == maxDepth {
+				return fs.SkipDir
+			} else if depth < maxDepth {
+				depth++
+			}
 		}
 
 		return nil
