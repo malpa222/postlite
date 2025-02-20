@@ -1,7 +1,6 @@
 package generator
 
 import (
-	"fmt"
 	b "homestead/lib/blogfsys"
 	"homestead/lib/parser"
 	"log"
@@ -45,16 +44,13 @@ func NewGenerator(root string) Generator {
 }
 
 func (g *generator) GenerateStaticContent() error {
-	if dirs, err := g.fsys.Find(b.Dir, 1); err != nil {
+	if dirs, err := g.fsys.FindWithFilter(1, dirFilter); err != nil {
 		return err
 	} else {
-		pattern := fmt.Sprintf("%s|%s", Public, Posts)
-		dirs = filterExclude(pattern, dirs)
-
 		g.copy(dirs)
 	}
 
-	if files, err := g.fsys.Find(b.MD, 0); err != nil {
+	if files, err := g.fsys.FindByKind(b.MD, 0); err != nil {
 		return err
 	} else {
 		g.parse(files)
@@ -64,14 +60,9 @@ func (g *generator) GenerateStaticContent() error {
 }
 
 func (g *generator) GetPosts() (posts []b.BlogFile, err error) {
-	if posts, err = g.fsys.Find(b.HTML, 0); err != nil {
-		return posts, err
-	} else {
-		pattern := fmt.Sprintf("(^|/)%s/%s(/|$)", Public, Posts)
-		posts = filterInclude(pattern, posts)
+	posts, err = g.fsys.FindWithFilter(0, postsFilter)
 
-		return posts, err
-	}
+	return posts, err
 }
 
 func (g *generator) copy(dirs []b.BlogFile) {

@@ -1,7 +1,6 @@
 package generator
 
 import (
-	"fmt"
 	b "homestead/lib/blogfsys"
 	"io/fs"
 	"testing"
@@ -17,13 +16,10 @@ const (
 func TestCopy(t *testing.T) {
 	gen := getEnv()
 
-	dirs, err := gen.fsys.Find(b.Dir, 1)
+	dirs, err := gen.fsys.FindWithFilter(1, dirFilter)
 	if err != nil {
 		t.Fatal(err)
 	} else {
-		pattern := fmt.Sprintf("%s|%s", Public, Posts)
-		dirs = filterExclude(pattern, dirs)
-
 		gen.copy(dirs)
 	}
 
@@ -33,25 +29,10 @@ func TestCopy(t *testing.T) {
 	}
 }
 
-func TestGetPosts(t *testing.T) {
-	var want int = 1
-
-	gen := getEnv()
-	gen.GenerateStaticContent()
-
-	if posts, err := gen.GetPosts(); err != nil {
-		t.Fatal(err)
-	} else {
-		if want != len(posts) {
-			t.Fatalf("Expected only %d post, got %d instead", want, len(posts))
-		}
-	}
-}
-
 func TestParse(t *testing.T) {
 	gen := getEnv()
 
-	files, err := gen.fsys.Find(b.MD, 0)
+	files, err := gen.fsys.FindByKind(b.MD, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,6 +67,21 @@ func TestGenerateStaticContent(t *testing.T) {
 	_, err = fs.Stat(gen.fsys, testAsset)
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestGetPosts(t *testing.T) {
+	var want int = 1
+
+	gen := getEnv()
+	gen.GenerateStaticContent()
+
+	if posts, err := gen.GetPosts(); err != nil {
+		t.Fatal(err)
+	} else {
+		if want != len(posts) {
+			t.Fatalf("Expected only %d post, got %d instead", want, len(posts))
+		}
 	}
 }
 

@@ -28,7 +28,7 @@ func TestFindRoot(t *testing.T) {
 	fsys := getEnv()
 
 	// Find only root directories
-	if found, err := fsys.Find(Dir, 1); err != nil {
+	if found, err := fsys.FindByKind(Dir, 1); err != nil {
 		t.Fatal(err)
 	} else if len(found) != want {
 		t.Fatalf("Expected %d dirs, found: %d", want, len(found))
@@ -39,8 +39,8 @@ func TestFindChildren(t *testing.T) {
 	var want int = 4
 	fsys := getEnv()
 
-	// Find only root directories
-	if found, err := fsys.Find(Dir, 2); err != nil {
+	// Find with children
+	if found, err := fsys.FindByKind(Dir, 2); err != nil {
 		t.Fatal(err)
 	} else if len(found) != want {
 		t.Fatalf("Expected %d dirs, found: %d", want, len(found))
@@ -52,7 +52,7 @@ func TestFindAll(t *testing.T) {
 	fsys := getEnv()
 
 	// Find only root directories
-	if found, err := fsys.Find(MD, 0); err != nil {
+	if found, err := fsys.FindByKind(MD, 0); err != nil {
 		t.Fatal(err)
 	} else if len(found) != want {
 		t.Fatalf("Expected %d .md files, found: %d", want, len(found))
@@ -63,7 +63,7 @@ func TestCopyBuf(t *testing.T) {
 	fsys := getEnv()
 	dst := filepath.Join("public", testFile)
 
-	result, err := fsys.Find(MD, 1)
+	result, err := fsys.FindByKind(MD, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +86,7 @@ func TestCopyDir(t *testing.T) {
 	fsys := getEnv()
 	dst := "public"
 
-	result, err := fsys.Find(Dir, 1)
+	result, err := fsys.FindByKind(Dir, 1)
 	if err != nil {
 		t.Fatal(err)
 	}

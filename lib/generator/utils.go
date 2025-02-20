@@ -1,30 +1,37 @@
 package generator
 
 import (
+	"fmt"
 	b "homestead/lib/blogfsys"
 	"regexp"
 )
 
-func filterInclude(pattern string, files []b.BlogFile) (filtered []b.BlogFile) {
-	re := regexp.MustCompile(pattern)
-
-	for _, file := range files {
-		if re.MatchString(file.GetPath()) {
-			filtered = append(filtered, file)
-		}
+var dirFilter b.FilterFunc = func(file b.BlogFile) bool {
+	if file.GetKind() != b.Dir {
+		return false
 	}
 
-	return filtered
+	pattern := fmt.Sprintf("%s|%s", Public, Posts)
+	re := regexp.MustCompile(pattern)
+
+	if !re.MatchString(file.GetPath()) {
+		return true
+	} else {
+		return false
+	}
 }
 
-func filterExclude(pattern string, files []b.BlogFile) (filtered []b.BlogFile) {
-	re := regexp.MustCompile(pattern)
-
-	for _, file := range files {
-		if !re.MatchString(file.GetPath()) {
-			filtered = append(filtered, file)
-		}
+var postsFilter b.FilterFunc = func(file b.BlogFile) bool {
+	if file.GetKind() != b.HTML {
+		return false
 	}
 
-	return filtered
+	pattern := fmt.Sprintf("(^|/)%s/%s(/|$)", Public, Posts)
+	re := regexp.MustCompile(pattern)
+
+	if re.MatchString(file.GetPath()) {
+		return true
+	} else {
+		return false
+	}
 }
