@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"homestead/lib/blogfsys"
 	"homestead/lib/generator"
+	"log"
 
 	"github.com/spf13/cobra"
 )
@@ -24,8 +24,10 @@ var generateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		root, _ := cmd.LocalFlags().GetString(gFlags.rootName)
 
-		fsys := blogfsys.New(root)
-		generator.GenerateStaticContent(fsys)
+		gen := generator.NewGenerator(root)
+		if err := gen.GenerateStaticContent(); err != nil {
+			log.Fatal(err)
+		}
 	},
 }
 

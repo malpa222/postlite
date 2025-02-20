@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"fmt"
 	b "homestead/lib/blogfsys"
 	"homestead/lib/parser"
 	"log"
@@ -18,44 +19,78 @@ import (
 // |   |__ images
 // |-- public     	<--- generated content + resources
 
-const public string = "public"
+const (
+	Public = "public"
+	Posts  = "posts"
+)
 
-var fsys b.BlogFsys
+type Generator interface {
+	GenerateStaticContent() error
+	GetPosts() ([]b.BlogFile, error)
+}
 
-func GenerateStaticContent(fs b.BlogFsys) {
-	fsys = fs
+type generator struct {
+	fsys b.BlogFsys
+}
 
-	if err := fs.Clean(public); err != nil {
+func NewGenerator(root string) Generator {
+	fsys := b.NewBlogFsys(root)
+	if err := fsys.Clean(Public); err != nil {
 		log.Fatal(err)
 	}
 
-	if dirs, err := fsys.Find(b.Dir, 1); err != nil {
-		log.Fatal(err)
-	} else {
-		copy(dirs)
-	}
-
-	if files, err := fsys.Find(b.MD, 0); err != nil {
-		log.Fatal(err)
-	} else {
-		parse(files)
+	return &generator{
+		fsys: fsys,
 	}
 }
 
-func copy(dirs []b.BlogFile) {
+func (g *generator) GenerateStaticContent() error {
+	if dirs, err := g.fsys.Find(b.Dir, 1); err != nil {
+		return err
+	} else {
+		pattern := fmt.Sprintf("%s|%s", Public, Posts)
+		dirs = filterExclude(pattern, dirs)
+
+		g.copy(dirs)
+	}
+
+	if files, err := g.fsys.Find(b.MD, 0); err != nil {
+		return err
+	} else {
+		g.parse(files)
+	}
+
+	return nil
+}
+
+func (g *generator) GetPosts() (posts []b.BlogFile, err error) {
+	if posts, err = g.fsys.Find(b.HTML, 0); err != nil {
+		return posts, err
+	} else {
+		pattern := fmt.Sprintf("(^|/)%s/%s(/|$)", Public, Posts)
+		posts = filterInclude(pattern, posts)
+
+		return posts, err
+	}
+}
+
+func (g *generator) copy(dirs []b.BlogFile) {
 	for _, dir := range dirs {
 		src := dir.GetPath()
-		dst := filepath.Join(public, src)
+
+		if strings.Contains(src, Public) {
+			continue
+		}
 
 		log.Printf("Copying %s ...", src)
 
-		if err := fsys.Copy(dir, dst); err != nil {
+		if err := g.fsys.CopyDir(dir, Public); err != nil {
 			log.Printf("Copying failed: %s", err)
 		}
 	}
 }
 
-func parse(files []b.BlogFile) {
+func (g *generator) parse(files []b.BlogFile) {
 	for _, file := range files {
 		src := file.GetPath()
 		log.Printf("Parsing %s ...", src)
@@ -68,9 +103,9 @@ func parse(files []b.BlogFile) {
 		html, _ := parser.ParseMarkdown(md) // FIXME: FIX THIS
 
 		dst := strings.Replace(src, ".md", ".html", 1)
-		dst = filepath.Join(public, dst)
+		dst = filepath.Join(Public, dst)
 
-		if err := fsys.CopyBuf(dst, html); err != nil {
+		if err := g.fsys.CopyBuf(dst, html); err != nil {
 			log.Printf("Parsing failed: %s", err)
 		}
 	}

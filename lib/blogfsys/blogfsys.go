@@ -14,7 +14,7 @@ type BlogFsys interface {
 
 	Clean(dir string) error
 	CopyBuf(dst string, buf []byte) error
-	Copy(source BlogFile, dst string) error
+	CopyDir(source BlogFile, dst string) error
 
 	Find(kind FileKind, maxDepth int) ([]BlogFile, error)
 }
@@ -23,7 +23,7 @@ type blogFsys struct {
 	root string
 }
 
-func New(root string) BlogFsys {
+func NewBlogFsys(root string) BlogFsys {
 	root, err := filepath.Abs(root)
 	if err != nil {
 		log.Fatal(err)
@@ -53,18 +53,23 @@ func (b *blogFsys) CopyBuf(dst string, buf []byte) error {
 	return writeFile(dst, buf)
 }
 
-func (b *blogFsys) Copy(entry BlogFile, dst string) error {
+func (b *blogFsys) CopyDir(entry BlogFile, dst string) error {
+	if entry.GetKind() != Dir {
+		return nil
+	}
+
 	return fs.WalkDir(b, entry.GetPath(), func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		src := filepath.Join(b.root, path)
 		target := filepath.Join(b.root, dst, path)
 
 		if d.IsDir() {
+			target := filepath.Join(b.root, dst, path)
 			return createDir(target)
 		} else {
+			src := filepath.Join(b.root, path)
 			return copyFile(src, target)
 		}
 	})

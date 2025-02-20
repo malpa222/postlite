@@ -47,10 +47,7 @@ func copyFile(src string, dst string) error {
 	}
 	defer dstfile.Close()
 
-	reader := bufio.NewReader(srcfile)
-	writer := bufio.NewWriter(dstfile)
-
-	if _, err = reader.WriteTo(writer); err != nil {
+	if _, err := io.Copy(dstfile, srcfile); err != nil {
 		return err
 	} else {
 		return nil

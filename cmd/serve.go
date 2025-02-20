@@ -43,7 +43,7 @@ var serveCmd = &cobra.Command{
 			HTTPS: https,
 		}
 
-		fsys := blogfsys.New(root)
+		fsys := blogfsys.NewBlogFsys(root)
 		server.Serve(fsys, cfg)
 	},
 }

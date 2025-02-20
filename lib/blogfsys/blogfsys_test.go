@@ -1,6 +1,7 @@
 package blogfsys
 
 import (
+	"io/fs"
 	"path/filepath"
 	"testing"
 )
@@ -75,38 +76,32 @@ func TestCopyBuf(t *testing.T) {
 	if err := fsys.CopyBuf(dst, buf); err != nil {
 		t.Fatal(err)
 	}
-}
 
-func TestCopyFile(t *testing.T) {
-	fsys := getEnv()
-
-	result, err := fsys.Find(MD, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Check manually
-	if err := fsys.Copy(result[0], "public"); err != nil {
+	if _, err = fs.Stat(fsys, dst); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func TestCopydir(t *testing.T) {
+func TestCopyDir(t *testing.T) {
 	fsys := getEnv()
+	dst := "public"
 
 	result, err := fsys.Find(Dir, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Check manually
-	if err := fsys.Copy(result[0], "public"); err != nil {
+	if err := fsys.CopyDir(result[0], dst); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err = fs.Stat(fsys, dst); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func getEnv() BlogFsys {
-	fsys := New(testDir)
+	fsys := NewBlogFsys(testDir)
 	fsys.Clean("public")
 
 	return fsys

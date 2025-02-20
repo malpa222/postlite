@@ -1,73 +1,99 @@
 package generator
 
 import (
+	"fmt"
 	b "homestead/lib/blogfsys"
 	"io/fs"
 	"testing"
 )
 
 const (
-	testDir   string = "../../test"
+	root      string = "../../test"
 	testAsset string = "public/assets/apple.jpg"
 	testIndex string = "public/index.html"
 	testPost  string = "public/posts/post.html"
 )
 
 func TestCopy(t *testing.T) {
-	fsys := b.New(testDir)
-	fsys.Clean(public)
+	gen := getEnv()
 
-	dirs, err := fsys.Find(b.Dir, 1)
+	dirs, err := gen.fsys.Find(b.Dir, 1)
 	if err != nil {
 		t.Fatal(err)
-	}
-	copy(dirs)
+	} else {
+		pattern := fmt.Sprintf("%s|%s", Public, Posts)
+		dirs = filterExclude(pattern, dirs)
 
-	_, err = fs.Stat(fsys, testAsset)
+		gen.copy(dirs)
+	}
+
+	_, err = fs.Stat(gen.fsys, testAsset)
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
+func TestGetPosts(t *testing.T) {
+	var want int = 1
+
+	gen := getEnv()
+	gen.GenerateStaticContent()
+
+	if posts, err := gen.GetPosts(); err != nil {
+		t.Fatal(err)
+	} else {
+		if want != len(posts) {
+			t.Fatalf("Expected only %d post, got %d instead", want, len(posts))
+		}
+	}
+}
+
 func TestParse(t *testing.T) {
-	fsys := b.New(testDir)
-	fsys.Clean(public)
+	gen := getEnv()
 
-	files, err := fsys.Find(b.MD, 0)
+	files, err := gen.fsys.Find(b.MD, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	parse(files)
+	gen.parse(files)
 
-	_, err = fs.Stat(fsys, testIndex)
+	_, err = fs.Stat(gen.fsys, testIndex)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = fs.Stat(fsys, testPost)
+	_, err = fs.Stat(gen.fsys, testPost)
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestGenerateStaticContent(t *testing.T) {
-	fsys := b.New(testDir)
-	fsys.Clean(public)
+	gen := getEnv()
 
-	GenerateStaticContent(fsys)
+	gen.GenerateStaticContent()
 
-	_, err := fs.Stat(fsys, testIndex)
+	_, err := fs.Stat(gen.fsys, testIndex)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = fs.Stat(fsys, testPost)
+	_, err = fs.Stat(gen.fsys, testPost)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = fs.Stat(fsys, testAsset)
+	_, err = fs.Stat(gen.fsys, testAsset)
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func getEnv() generator {
+	fsys := b.NewBlogFsys(root)
+	fsys.Clean(Public)
+
+	return generator{
+		fsys: fsys,
 	}
 }
