@@ -1,7 +1,6 @@
 package server
 
 import (
-	b "homestead/lib/blogfsys"
 	"net/http"
 )
 
@@ -23,14 +22,12 @@ func Serve(cfg ServerConfig) error {
 }
 
 func newServer(cfg ServerConfig) server {
-	fsys := b.NewBlogFsys(cfg.Root)
-
 	server := server{
-		finder: NewPageFinder(fsys),
+		finder: NewPageFinder(cfg.Root),
 		mux:    http.NewServeMux(),
 	}
-	server.registerRoutes()
 
+	server.registerRoutes()
 	return server
 }
 

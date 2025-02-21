@@ -20,9 +20,9 @@ type pageFinder struct {
 var index b.BlogFile
 var posts []b.BlogFile
 
-func NewPageFinder(fsys b.BlogFsys) PageFinder {
+func NewPageFinder(root string) PageFinder {
 	finder := pageFinder{
-		fsys: fsys,
+		fsys: b.NewBlogFsys(root),
 	}
 
 	if found, err := finder.findInFsys(b.Index); err != nil {
@@ -61,10 +61,10 @@ func (finder pageFinder) findInFsys(pattern string) ([]b.BlogFile, error) {
 			return false
 		}
 
-		tmp := fmt.Sprintf("^%s/.*%s", b.Public, pattern)
-		tmp = regexp.QuoteMeta(tmp)
-		re := regexp.MustCompile(tmp)
+		tmp := regexp.QuoteMeta(pattern)
+		tmp = fmt.Sprintf("^%s/.*%s", b.Public, tmp)
 
+		re := regexp.MustCompile(tmp)
 		if re.MatchString(file.GetPath()) {
 			return true
 		} else {
