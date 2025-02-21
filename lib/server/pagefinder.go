@@ -3,7 +3,9 @@ package server
 import (
 	"fmt"
 	b "homestead/lib/blogfsys"
+	"log"
 	"regexp"
+	"strings"
 )
 
 type PageFinder interface {
@@ -13,47 +15,55 @@ type PageFinder interface {
 
 type pageFinder struct {
 	fsys b.BlogFsys
-
-	index b.BlogFile
-	pages []b.BlogFile
 }
 
+var index b.BlogFile
+var posts []b.BlogFile
+
 func NewPageFinder(fsys b.BlogFsys) PageFinder {
-	finder := &pageFinder{
+	finder := pageFinder{
 		fsys: fsys,
 	}
 
-	if index, err := finder.find("index.html"); err != nil {
-		panic(err)
+	if found, err := finder.findInFsys(b.Index); err != nil {
+		log.Fatal(err)
 	} else {
-		finder.index = index
+		index = found[0]
 	}
 
-	if pages, err := finder.getPages(); err != nil {
-		panic(err)
+	if found, err := finder.findInFsys(b.Posts); err != nil {
+		log.Fatal(err)
 	} else {
-		finder.pages = pages
+		posts = found
 	}
 
-	return finder
+	return &finder
 }
 
-func (finder *pageFinder) GetIndex() b.BlogFile {
+func (finder pageFinder) GetIndex() b.BlogFile {
+	return index
+}
+
+func (finder pageFinder) GetPost(name string) b.BlogFile {
+	for _, post := range posts {
+		if strings.Contains(post.GetPath(), name) {
+			return post
+		}
+	}
+
 	return nil
 }
 
-func (finder *pageFinder) GetPost(name string) b.BlogFile {
-	return nil
-}
-
-func (finder *pageFinder) getPages() ([]b.BlogFile, error) {
+// looks for a specific pattern in the blogfile path
+func (finder pageFinder) findInFsys(pattern string) ([]b.BlogFile, error) {
 	return finder.fsys.FindWithFilter(0, func(file b.BlogFile) bool {
 		if file.GetKind() != b.HTML {
 			return false
 		}
 
-		pattern := fmt.Sprintf("(^|/)%s(/|$)", b.Public)
-		re := regexp.MustCompile(pattern)
+		tmp := fmt.Sprintf("^%s/.*%s", b.Public, pattern)
+		tmp = regexp.QuoteMeta(tmp)
+		re := regexp.MustCompile(tmp)
 
 		if re.MatchString(file.GetPath()) {
 			return true
@@ -61,8 +71,4 @@ func (finder *pageFinder) getPages() ([]b.BlogFile, error) {
 			return false
 		}
 	})
-}
-
-func (finder *pageFinder) find(name string) (b.BlogFile, error) {
-	return nil, nil
 }

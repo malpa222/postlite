@@ -48,7 +48,6 @@ func (s *server) registerRoutes() {
 	s.mux.HandleFunc("GET /", func(w http.ResponseWriter, req *http.Request) {
 		if req.URL.Path != "/" && req.URL.Path != "/index.html" {
 			w.WriteHeader(http.StatusNotFound)
-
 			return
 		}
 
