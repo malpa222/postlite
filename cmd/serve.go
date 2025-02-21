@@ -1,8 +1,7 @@
 package cmd
 
 import (
-	"homestead/lib/blogfsys"
-	"homestead/lib/server"
+	s "homestead/lib/server"
 
 	"github.com/spf13/cobra"
 )
@@ -38,13 +37,13 @@ var serveCmd = &cobra.Command{
 		https, _ := cmd.Flags().GetBool(sFlags.httpsName)
 		port, _ := cmd.Flags().GetString(sFlags.portName)
 
-		cfg := server.ServerCFG{
+		cfg := s.ServerConfig{
+			Root:  root,
 			Port:  port,
 			HTTPS: https,
 		}
 
-		fsys := blogfsys.NewBlogFsys(root)
-		server.Serve(fsys, cfg)
+		s.Serve(cfg)
 	},
 }
 

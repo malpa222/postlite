@@ -1,20 +1,62 @@
 package server
 
 import (
-	"io/fs"
-	"log"
+	b "homestead/lib/blogfsys"
 	"net/http"
 )
 
-type ServerCFG struct {
+type ServerConfig struct {
+	Root string
+
 	Port  string
 	HTTPS bool
 }
 
-func Serve(fsys fs.FS, cfg ServerCFG) {
-	server := http.FileServerFS(fsys)
-	http.Handle("/", server)
+type server struct {
+	finder PageFinder
+	mux    *http.ServeMux
+}
 
-	log.Printf("Listening on %s ...", cfg.Port)
-	log.Fatal(http.ListenAndServe(cfg.Port, server))
+func Serve(cfg ServerConfig) error {
+	srv := newServer(cfg)
+	return http.ListenAndServe(cfg.Port, srv.mux)
+}
+
+func newServer(cfg ServerConfig) server {
+	fsys := b.NewBlogFsys(cfg.Root)
+
+	server := server{
+		finder: NewPageFinder(fsys),
+		mux:    http.NewServeMux(),
+	}
+	server.registerRoutes()
+
+	return server
+}
+
+func (s *server) registerRoutes() {
+	s.mux.HandleFunc("GET /posts/{id}", func(w http.ResponseWriter, req *http.Request) {
+		post := s.finder.GetPost(req.PathValue("id"))
+
+		if data, err := post.Read(); err != nil {
+			panic(err)
+		} else {
+			w.Write(data)
+		}
+	})
+
+	s.mux.HandleFunc("GET /", func(w http.ResponseWriter, req *http.Request) {
+		if req.URL.Path != "/" && req.URL.Path != "/index.html" {
+			w.WriteHeader(http.StatusNotFound)
+
+			return
+		}
+
+		index := s.finder.GetIndex()
+		if data, err := index.Read(); err != nil {
+			panic(err)
+		} else {
+			w.Write(data)
+		}
+	})
 }

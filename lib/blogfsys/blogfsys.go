@@ -32,11 +32,11 @@ func NewBlogFsys(root string) BlogFsys {
 		log.Fatal(err)
 	}
 
-	fsys := &blogFsys{
+	fsys := blogFsys{
 		root: root,
 	}
 
-	return fsys
+	return &fsys
 }
 
 func (b *blogFsys) Clean(dir string) error {

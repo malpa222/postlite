@@ -5,6 +5,20 @@ import (
 	"path/filepath"
 )
 
+// ---- FileKind
+
+type FileKind int
+
+const (
+	MD FileKind = 1 << iota
+	HTML
+	CSS
+	YAML
+	Media
+	Dir
+	All = MD | HTML | CSS | YAML | Media | Dir
+)
+
 // ---- BlogFile
 
 type BlogFile interface {

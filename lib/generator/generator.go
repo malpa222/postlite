@@ -18,14 +18,8 @@ import (
 // |   |__ images
 // |-- public     	<--- generated content + resources
 
-const (
-	Public = "public"
-	Posts  = "posts"
-)
-
 type Generator interface {
 	GenerateStaticContent() error
-	GetPosts() ([]b.BlogFile, error)
 }
 
 type generator struct {
@@ -34,7 +28,7 @@ type generator struct {
 
 func NewGenerator(root string) Generator {
 	fsys := b.NewBlogFsys(root)
-	if err := fsys.Clean(Public); err != nil {
+	if err := fsys.Clean(b.Public); err != nil {
 		log.Fatal(err)
 	}
 
@@ -44,13 +38,13 @@ func NewGenerator(root string) Generator {
 }
 
 func (g *generator) GenerateStaticContent() error {
-	if dirs, err := g.fsys.FindWithFilter(1, dirFilter); err != nil {
+	if dirs, err := getDirs(g.fsys); err != nil {
 		return err
 	} else {
 		g.copy(dirs)
 	}
 
-	if files, err := g.fsys.FindByKind(b.MD, 0); err != nil {
+	if files, err := getMarkdown(g.fsys); err != nil {
 		return err
 	} else {
 		g.parse(files)
@@ -59,23 +53,17 @@ func (g *generator) GenerateStaticContent() error {
 	return nil
 }
 
-func (g *generator) GetPosts() (posts []b.BlogFile, err error) {
-	posts, err = g.fsys.FindWithFilter(0, postsFilter)
-
-	return posts, err
-}
-
 func (g *generator) copy(dirs []b.BlogFile) {
 	for _, dir := range dirs {
 		src := dir.GetPath()
 
-		if strings.Contains(src, Public) {
+		if strings.Contains(src, b.Public) {
 			continue
 		}
 
 		log.Printf("Copying %s ...", src)
 
-		if err := g.fsys.CopyDir(dir, Public); err != nil {
+		if err := g.fsys.CopyDir(dir, b.Public); err != nil {
 			log.Printf("Copying failed: %s", err)
 		}
 	}
@@ -94,7 +82,7 @@ func (g *generator) parse(files []b.BlogFile) {
 		html, _ := parser.ParseMarkdown(md) // FIXME: FIX THIS
 
 		dst := strings.Replace(src, ".md", ".html", 1)
-		dst = filepath.Join(Public, dst)
+		dst = filepath.Join(b.Public, dst)
 
 		if err := g.fsys.CopyBuf(dst, html); err != nil {
 			log.Printf("Parsing failed: %s", err)
