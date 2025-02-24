@@ -43,7 +43,10 @@ var serveCmd = &cobra.Command{
 			HTTPS: https,
 		}
 
-		s.Serve(cfg)
+		err := s.Serve(cfg)
+		if err != nil {
+			panic(err)
+		}
 	},
 }
 

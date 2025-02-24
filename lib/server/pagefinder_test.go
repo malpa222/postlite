@@ -41,7 +41,7 @@ func TestFindInFsys(t *testing.T) {
 func TestGetIndex(t *testing.T) {
 	setEnv()
 
-	finder := NewPageFinder(root)
+	finder, _ := NewPageFinder(root)
 
 	idx := finder.GetIndex()
 	if idx == nil {
@@ -54,7 +54,7 @@ func TestGetIndex(t *testing.T) {
 func TestGetPost(t *testing.T) {
 	setEnv()
 
-	finder := NewPageFinder(root)
+	finder, _ := NewPageFinder(root)
 
 	post := finder.GetPost(testpost)
 	if post == nil {

@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	b "homestead/lib/blogfsys"
-	"log"
 	"regexp"
 	"strings"
 )
@@ -15,37 +14,37 @@ type PageFinder interface {
 
 type pageFinder struct {
 	fsys b.BlogFsys
+
+	index b.BlogFile
+	posts []b.BlogFile
 }
 
-var index b.BlogFile
-var posts []b.BlogFile
-
-func NewPageFinder(root string) PageFinder {
+func NewPageFinder(root string) (PageFinder, error) {
 	finder := pageFinder{
 		fsys: b.NewBlogFsys(root),
 	}
 
 	if found, err := finder.findInFsys(b.Index); err != nil {
-		log.Fatal(err)
+		return nil, err
 	} else {
-		index = found[0]
+		finder.index = found[0]
 	}
 
 	if found, err := finder.findInFsys(b.Posts); err != nil {
-		log.Fatal(err)
+		return nil, err
 	} else {
-		posts = found
+		finder.posts = found
 	}
 
-	return &finder
+	return finder, nil
 }
 
 func (finder pageFinder) GetIndex() b.BlogFile {
-	return index
+	return finder.index
 }
 
 func (finder pageFinder) GetPost(name string) b.BlogFile {
-	for _, post := range posts {
+	for _, post := range finder.posts {
 		if strings.Contains(post.GetPath(), name) {
 			return post
 		}

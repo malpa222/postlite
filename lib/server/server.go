@@ -11,48 +11,48 @@ type ServerConfig struct {
 	HTTPS bool
 }
 
-type server struct {
-	finder PageFinder
-	mux    *http.ServeMux
-}
+var finder PageFinder
 
 func Serve(cfg ServerConfig) error {
-	srv := newServer(cfg)
-	return http.ListenAndServe(cfg.Port, srv.mux)
-}
-
-func newServer(cfg ServerConfig) server {
-	server := server{
-		finder: NewPageFinder(cfg.Root),
-		mux:    http.NewServeMux(),
+	if f, err := NewPageFinder(cfg.Root); err != nil {
+		return err
+	} else {
+		finder = f
 	}
 
-	server.registerRoutes()
-	return server
+	mux := NewBlogMux()
+	mux.HandleFunc("GET /posts/{id}", postHandler)
+	mux.HandleFunc("GET /", indexHandler)
+
+	return http.ListenAndServe(cfg.Port, mux)
 }
 
-func (s *server) registerRoutes() {
-	s.mux.HandleFunc("GET /posts/{id}", func(w http.ResponseWriter, req *http.Request) {
-		post := s.finder.GetPost(req.PathValue("id"))
+func indexHandler(w http.ResponseWriter, req *http.Request) {
+	if req.URL.Path != "/" && req.URL.Path != "/index.html" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 
-		if data, err := post.Read(); err != nil {
-			panic(err)
-		} else {
-			w.Write(data)
-		}
-	})
+	index := finder.GetIndex()
+	data, err := index.Read()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 
-	s.mux.HandleFunc("GET /", func(w http.ResponseWriter, req *http.Request) {
-		if req.URL.Path != "/" && req.URL.Path != "/index.html" {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
+	w.Write(data)
+}
 
-		index := s.finder.GetIndex()
-		if data, err := index.Read(); err != nil {
-			panic(err)
-		} else {
-			w.Write(data)
-		}
-	})
+func postHandler(w http.ResponseWriter, req *http.Request) {
+	post := finder.GetPost(req.PathValue("id"))
+	if post == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	data, err := post.Read()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	w.Write(data)
 }
