@@ -20,17 +20,14 @@ jobs:
       with:
         go-version: '1.24' 
 
-    - name: Build Go binary
+    - name: Test
       run: |
-        go build -o postlite -ldflags "-s -w"
+        go clean -testcache
+        go test ./...
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: postlite
-        path: postlite
   build:
     runs-on: ubuntu-latest
+    needs: test
 
     steps:
     - name: Checkout code
@@ -41,8 +38,9 @@ jobs:
       with:
         go-version: '1.24' 
 
-    - name: Build Go binary
+    - name: Build
       run: |
+        go mod tidy
         go build -o postlite -ldflags "-s -w"
 
     - name: Upload artifact
