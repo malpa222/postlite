@@ -1,6 +1,5 @@
 # executables
-main
-homestead
+postlite
 
 # testing
 test/public

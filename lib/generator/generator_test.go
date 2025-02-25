@@ -1,8 +1,8 @@
 package generator
 
 import (
-	b "homestead/lib/blogfsys"
 	"io/fs"
+	b "postlite/lib/blogfsys"
 	"testing"
 )
 

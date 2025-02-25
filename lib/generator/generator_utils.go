@@ -2,7 +2,7 @@ package generator
 
 import (
 	"fmt"
-	b "homestead/lib/blogfsys"
+	b "postlite/lib/blogfsys"
 	"regexp"
 )
 

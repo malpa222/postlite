@@ -1,8 +1,8 @@
 package server
 
 import (
-	b "homestead/lib/blogfsys"
-	"homestead/lib/generator"
+	b "postlite/lib/blogfsys"
+	"postlite/lib/generator"
 	"strings"
 	"testing"
 )

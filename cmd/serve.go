@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	s "homestead/lib/server"
+	s "postlite/lib/server"
 
 	"github.com/spf13/cobra"
 )
