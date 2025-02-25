@@ -14,60 +14,54 @@ const (
 )
 
 func TestCopy(t *testing.T) {
-	gen := getEnv()
+	setEnv()
 
-	if dirs, err := getDirs(gen.fsys); err != nil {
+	if dirs, err := getDirs(); err != nil {
 		t.Fatal(err)
 	} else {
-		gen.copy(dirs)
+		copyAssets(dirs)
 	}
 
-	if _, err := fs.Stat(gen.fsys, testAsset); err != nil {
+	if _, err := fs.Stat(fsys, testAsset); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestParse(t *testing.T) {
-	gen := getEnv()
+	setEnv()
 
-	if files, err := getMarkdown(gen.fsys); err != nil {
+	if files, err := getMarkdown(); err != nil {
 		t.Fatal(err)
 	} else {
-		gen.parse(files)
+		parseMarkdown(files)
 	}
 
-	if _, err := fs.Stat(gen.fsys, testIndex); err != nil {
+	if _, err := fs.Stat(fsys, testIndex); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := fs.Stat(gen.fsys, testPost); err != nil {
+	if _, err := fs.Stat(fsys, testPost); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestGenerateStaticContent(t *testing.T) {
-	gen := getEnv()
+	GenerateStaticContent(root)
 
-	gen.GenerateStaticContent()
-
-	if _, err := fs.Stat(gen.fsys, testIndex); err != nil {
+	if _, err := fs.Stat(fsys, testIndex); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := fs.Stat(gen.fsys, testPost); err != nil {
+	if _, err := fs.Stat(fsys, testPost); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := fs.Stat(gen.fsys, testAsset); err != nil {
+	if _, err := fs.Stat(fsys, testAsset); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func getEnv() generator {
-	fsys := b.NewBlogFsys(root)
+func setEnv() {
+	fsys = b.NewBlogFsys(root)
 	fsys.Clean(b.Public)
-
-	return generator{
-		fsys: fsys,
-	}
 }
