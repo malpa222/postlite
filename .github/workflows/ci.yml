@@ -48,3 +48,18 @@ jobs:
       with:
         name: postlite
         path: postlite
+
+  build-package:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24' 
+
+    - name: Build
+      run: |
+        go install github.com/malpa222/postlite@latest
+        postlite
