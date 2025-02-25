@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	s "postlite/lib/server"
+	s "github.com/malpa222/postlite/lib/server"
 
 	"github.com/spf13/cobra"
 )

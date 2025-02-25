@@ -2,8 +2,9 @@ package generator
 
 import (
 	"io/fs"
-	b "postlite/lib/blogfsys"
 	"testing"
+
+	b "github.com/malpa222/postlite/lib/blogfsys"
 )
 
 const (
