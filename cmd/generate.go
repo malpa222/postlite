@@ -2,7 +2,8 @@ package cmd
 
 import (
 	"log"
-	"postlite/lib/generator"
+
+	"github.com/malpa222/postlite/lib/generator"
 
 	"github.com/spf13/cobra"
 )

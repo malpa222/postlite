@@ -2,9 +2,10 @@ package server
 
 import (
 	"fmt"
-	b "postlite/lib/blogfsys"
 	"regexp"
 	"strings"
+
+	b "github.com/malpa222/postlite/lib/blogfsys"
 )
 
 type PageFinder interface {

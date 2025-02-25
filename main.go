@@ -1,7 +1,7 @@
 package main
 
 import (
-	"postlite/cmd"
+	"github.com/malpa222/postlite/cmd"
 )
 
 func main() {

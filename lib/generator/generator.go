@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
-	b "postlite/lib/blogfsys"
-	"postlite/lib/parser"
 	"regexp"
 	"strings"
+
+	b "github.com/malpa222/postlite/lib/blogfsys"
+	"github.com/malpa222/postlite/lib/parser"
 )
 
 // Basic site tree:

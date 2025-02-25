@@ -1,4 +1,4 @@
-module postlite
+module github.com/malpa222/postlite
 
 go 1.24
 

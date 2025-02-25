@@ -1,10 +1,11 @@
 package server
 
 import (
-	b "postlite/lib/blogfsys"
-	"postlite/lib/generator"
 	"strings"
 	"testing"
+
+	b "github.com/malpa222/postlite/lib/blogfsys"
+	"github.com/malpa222/postlite/lib/generator"
 )
 
 const (
