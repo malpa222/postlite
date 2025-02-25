@@ -1,13 +1,9 @@
 package main
 
 import (
-	"homestead/cmd"
-
-	"github.com/spf13/viper"
+	"postlite/cmd"
 )
 
 func main() {
-	viper.SetConfigFile(".env")
-
 	cmd.Execute()
 }

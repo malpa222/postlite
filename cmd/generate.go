@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"homestead/lib/generator"
 	"log"
+	"postlite/lib/generator"
 
 	"github.com/spf13/cobra"
 )

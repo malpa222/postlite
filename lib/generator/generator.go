@@ -1,10 +1,10 @@
 package generator
 
 import (
-	b "homestead/lib/blogfsys"
-	"homestead/lib/parser"
 	"log"
 	"path/filepath"
+	b "postlite/lib/blogfsys"
+	"postlite/lib/parser"
 	"strings"
 )
 
