@@ -16,7 +16,7 @@ const (
 func TestFindInFsys(t *testing.T) {
 	var want int = 1
 
-	setEnv()
+	generator.GenerateStaticContent(root)
 	finder := pageFinder{
 		fsys: b.NewBlogFsys(root),
 	}
@@ -39,7 +39,7 @@ func TestFindInFsys(t *testing.T) {
 }
 
 func TestGetIndex(t *testing.T) {
-	setEnv()
+	generator.GenerateStaticContent(root)
 
 	finder, _ := NewPageFinder(root)
 
@@ -52,7 +52,7 @@ func TestGetIndex(t *testing.T) {
 }
 
 func TestGetPost(t *testing.T) {
-	setEnv()
+	generator.GenerateStaticContent(root)
 
 	finder, _ := NewPageFinder(root)
 
@@ -60,10 +60,4 @@ func TestGetPost(t *testing.T) {
 	if post == nil {
 		t.Fatal("Expected a post, found nil")
 	}
-}
-
-func setEnv() {
-	// Make sure that the public is generated before tests
-	gen := generator.NewGenerator(root)
-	gen.GenerateStaticContent()
 }
