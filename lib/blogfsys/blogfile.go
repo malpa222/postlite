@@ -3,6 +3,7 @@ package blogfsys
 import (
 	"io/fs"
 	"path/filepath"
+	"strings"
 )
 
 // ---- FileKind
@@ -16,7 +17,7 @@ const (
 	YAML
 	Media
 	Dir
-	All = MD | HTML | CSS | YAML | Media | Dir
+	Dotfile
 )
 
 // ---- BlogFile
@@ -60,6 +61,10 @@ func (bf *blogFile) GetPath() string {
 // ---- Utils
 
 func stat(d fs.DirEntry) FileKind {
+	if strings.HasPrefix(".", d.Name()) {
+		return Dotfile
+	}
+
 	if d.IsDir() {
 		return Dir
 	}
