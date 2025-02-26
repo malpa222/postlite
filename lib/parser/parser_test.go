@@ -19,7 +19,7 @@ title: lorem ipsum
 func TestParseMarkdownPlain(t *testing.T) {
 	expected := "<!DOCTYPE html>\n<html>\n<head>\n  <title></title>\n  <meta name=\"GENERATOR\" content=\"github.com/malpa222/homestead\">\n  <meta charset=\"utf-8\">\n</head>\n<body>\n\n<h1 id=\"hello-world\">Hello, World!</h1>\n\n<p>Lorem ipsum dolor sit amet</p>\n\n</body>\n</html>\n"
 
-	raw, _ := ParseMarkdown([]byte(md_plain))
+	raw := ParseMarkdown([]byte(md_plain))
 	html := string(raw)
 
 	if html != expected {
@@ -30,7 +30,7 @@ func TestParseMarkdownPlain(t *testing.T) {
 func TestParseFrontmatter(t *testing.T) {
 	expected := "<!DOCTYPE html>\n<html>\n<head>\n  <title>lorem ipsum</title>\n  <meta name=\"GENERATOR\" content=\"github.com/malpa222/homestead\">\n  <meta charset=\"utf-8\">\n  <link rel=\"stylesheet\" type=\"text/css\" href=\"styles\">\n</head>\n<body>\n\n<p>stylesheet: styles</p>\n\n<h2 id=\"title-lorem-ipsum\">title: lorem ipsum</h2>\n\n</body>\n</html>\n"
 
-	raw, _ := ParseMarkdown([]byte(md_frontmatter))
+	raw := ParseMarkdown([]byte(md_frontmatter))
 	html := string(raw)
 
 	if html != expected {

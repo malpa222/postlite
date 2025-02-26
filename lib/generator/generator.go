@@ -81,7 +81,7 @@ func parseMarkdown(files []b.BlogFile) {
 			log.Printf("Parsing failed: %s", err)
 		}
 
-		html, _ := parser.ParseMarkdown(md) // FIXME: FIX THIS
+		html := parser.ParseMarkdown(md)
 
 		dst := strings.Replace(src, ".md", ".html", 1)
 		dst = filepath.Join(b.Public, dst)

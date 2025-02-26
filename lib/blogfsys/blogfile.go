@@ -61,7 +61,7 @@ func (bf *blogFile) GetPath() string {
 // ---- Utils
 
 func stat(d fs.DirEntry) FileKind {
-	if strings.HasPrefix(".", d.Name()) {
+	if strings.HasPrefix(d.Name(), ".") {
 		return Dotfile
 	}
 

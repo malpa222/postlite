@@ -1,3 +1,8 @@
+---
+title: Home
+stylesheet: styles/styles.css
+---
+
 # Hello, world!
 
 Hello 

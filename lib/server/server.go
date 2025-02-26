@@ -11,17 +11,18 @@ type ServerConfig struct {
 	HTTPS bool
 }
 
-var finder PageFinder
+var finder ResourceFinder
+var mux *BlogMux = NewBlogMux()
 
 func Serve(cfg ServerConfig) error {
-	if f, err := NewPageFinder(cfg.Root); err != nil {
+	if f, err := NewResourceFinder(cfg.Root); err != nil {
 		return err
 	} else {
 		finder = f
 	}
 
-	mux := NewBlogMux()
 	mux.HandleFunc("GET /posts/{id}", postHandler)
+	mux.HandleFunc("GET /styles/{name}", stylesHandler)
 	mux.HandleFunc("GET /", indexHandler)
 
 	return http.ListenAndServe(cfg.Port, mux)
@@ -37,6 +38,7 @@ func indexHandler(w http.ResponseWriter, req *http.Request) {
 	data, err := index.Read()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		mux.logger.Error(err.Error())
 	}
 
 	w.Write(data)
@@ -52,7 +54,25 @@ func postHandler(w http.ResponseWriter, req *http.Request) {
 	data, err := post.Read()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		mux.logger.Error(err.Error())
 	}
 
+	w.Write(data)
+}
+
+func stylesHandler(w http.ResponseWriter, req *http.Request) {
+	style := finder.GetStyle(req.PathValue("name"))
+	if style == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	data, err := style.Read()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		mux.logger.Error(err.Error())
+	}
+
+	w.Header().Add("Content-type", "text/css")
 	w.Write(data)
 }

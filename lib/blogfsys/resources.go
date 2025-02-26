@@ -1,7 +1,8 @@
 package blogfsys
 
 const (
+	Index  string = "index.html"
 	Public string = "public"
 	Posts  string = "posts"
-	Index  string = "index.html"
+	Styles string = "styles"
 )

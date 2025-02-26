@@ -18,11 +18,11 @@ func TestFindInFsys(t *testing.T) {
 	var want int = 1
 
 	generator.GenerateStaticContent(root)
-	finder := pageFinder{
+	finder := resourceFinder{
 		fsys: b.NewBlogFsys(root),
 	}
 
-	if found, err := finder.findInFsys(b.Index); err != nil {
+	if found, err := finder.findInFsys(b.HTML, b.Index); err != nil {
 		t.Fatal(err)
 	} else if len(found) != want {
 		t.Fatalf("Expected %d, got: %d", want, len(found))
@@ -30,7 +30,7 @@ func TestFindInFsys(t *testing.T) {
 		t.Fatalf("Expected %s, found: %s", b.Index, found[0].GetPath())
 	}
 
-	if found, err := finder.findInFsys(b.Posts); err != nil {
+	if found, err := finder.findInFsys(b.HTML, b.Posts); err != nil {
 		t.Fatal(err)
 	} else if len(found) != want {
 		t.Fatalf("Expected %d, got: %d", want, len(found))
@@ -42,7 +42,7 @@ func TestFindInFsys(t *testing.T) {
 func TestGetIndex(t *testing.T) {
 	generator.GenerateStaticContent(root)
 
-	finder, _ := NewPageFinder(root)
+	finder, _ := NewResourceFinder(root)
 
 	idx := finder.GetIndex()
 	if idx == nil {
@@ -55,7 +55,7 @@ func TestGetIndex(t *testing.T) {
 func TestGetPost(t *testing.T) {
 	generator.GenerateStaticContent(root)
 
-	finder, _ := NewPageFinder(root)
+	finder, _ := NewResourceFinder(root)
 
 	post := finder.GetPost(testpost)
 	if post == nil {

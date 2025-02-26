@@ -1,5 +1,6 @@
 # executables
 postlite
+__debug*
 
 # testing
 test/public
