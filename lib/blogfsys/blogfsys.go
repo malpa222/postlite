@@ -16,18 +16,16 @@ const (
 	Styles string = "styles"
 )
 
-type FilterFunc = func(file BlogFile) bool
-
 // ---- BlogFsys
+
+type FilterFunc = func(file DataSource) bool
 
 type BlogFsys interface {
 	fs.FS
 
 	Clean(dir string) error
-	CopyBuf(dst string, buf []byte) error
-	CopyDir(source BlogFile, dst string) error
-
-	Find(maxDepth int, filter FilterFunc) ([]BlogFile, error)
+	Copy(source DataSource, destination string) error
+	Find(maxDepth int, filter FilterFunc) ([]DataSource, error)
 }
 
 type blogFsys struct {
@@ -50,53 +48,35 @@ func NewBlogFsys(root string) BlogFsys {
 func (b *blogFsys) Clean(dir string) error {
 	dir = filepath.Join(b.root, dir)
 
-	return cleanDir(dir)
-}
-
-func (b *blogFsys) CopyBuf(dst string, buf []byte) error {
-	dst = filepath.Join(b.root, dst)
-
-	dir := filepath.Dir(dst)
-	if err := createDir(dir); err != nil {
+	os.RemoveAll(dir)
+	if err := os.MkdirAll(dir, 0777); err != nil {
 		return err
 	}
 
-	return writeFile(dst, buf)
+	return nil
 }
 
-func (b *blogFsys) CopyDir(entry BlogFile, dst string) error {
-	if entry.GetKind() != Dir {
-		return nil
+func (b *blogFsys) Copy(source DataSource, destination string) error {
+	destination = filepath.Join(b.root, destination)
+
+	// prepare output directory tree
+	dir := filepath.Dir(destination)
+	if err := os.MkdirAll(dir, 0777); err != nil {
+		return err
 	}
 
-	return fs.WalkDir(b, entry.GetPath(), func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		target := filepath.Join(b.root, dst, path)
-
-		if d.IsDir() {
-			target := filepath.Join(b.root, dst, path)
-			return createDir(target)
-		} else {
-			src := filepath.Join(b.root, path)
-			return copyFile(src, target)
-		}
-	})
+	return source.CopyTo(destination)
 }
-
-// ---- Find
 
 // Find walks the directory tree up to maxDepth levels.
 // maxDepth == 1 : only root
 // maxDepth >= 2 : maxDepth
 // maxDepth <= 0 : full
-func (b *blogFsys) Find(maxDepth int, filter FilterFunc) (files []BlogFile, err error) {
+func (b *blogFsys) Find(maxDepth int, filter FilterFunc) (files []DataSource, err error) {
 	var root string = "."
 	var depth int = 1
 
-	err = fs.WalkDir(b, root, func(path string, d fs.DirEntry, err error) error {
+	fs.WalkDir(b, root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -106,10 +86,12 @@ func (b *blogFsys) Find(maxDepth int, filter FilterFunc) (files []BlogFile, err 
 			return nil
 		}
 
-		file := newBlogFile(
-			path,
-			filepath.Join(b.root, path),
-			d)
+		var file DataSource
+		if entry.IsDir() {
+			file = &BlogDir{path: filepath.Join(b.root, path)}
+		} else {
+			file = &BlogFile{path: filepath.Join(b.root, path)}
+		}
 
 		if filter(file) {
 			files = append(files, file)

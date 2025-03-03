@@ -8,16 +8,16 @@ import (
 
 const generator = `  <meta name="GENERATOR" content="github.com/malpa222/homestead`
 
-func ParseMarkdown(md []byte) []byte {
+func ParseMarkdown(md []byte) ([]byte, error) {
 	var fm frontmatter
+	var parser = newParser(&fm)
 
-	parser := newParser(&fm)
 	doc := parser.Parse(md)
 
 	renderer := newRenderer(fm)
 	html := markdown.Render(doc, renderer)
 
-	return html
+	return html, nil
 }
 
 func newParser(fm *frontmatter) *parser.Parser {

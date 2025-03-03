@@ -1,6 +1,8 @@
 package blogfsys
 
 import (
+	"io/fs"
+	"path/filepath"
 	"testing"
 )
 
@@ -80,27 +82,28 @@ func TestFindAll(t *testing.T) {
 	}
 }
 
-func TestCopyBuf(t *testing.T) {
-	// fsys := getEnv()
-	// dst := filepath.Join("public", testFile)
+func TestCopyFile(t *testing.T) {
+	fsys := getEnv()
+	dst := filepath.Join("public", testFile)
 
-	// result, err := fsys.FindByKind(MD, 1)
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
+	found, err := fsys.Find(1, func(file BlogFile) bool {
+		if file.GetKind() == MD {
+			return true
+		} else {
+			return false
+		}
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	// buf, err := result[0].Read()
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
+	if err := fsys.Copy(found[0], dst); err != nil {
+		t.Fatal(err)
+	}
 
-	// if err := fsys.CopyBuf(dst, buf); err != nil {
-	// 	t.Fatal(err)
-	// }
-
-	// if _, err = fs.Stat(fsys, dst); err != nil {
-	// 	t.Fatal(err)
-	// }
+	if _, err = fs.Stat(fsys, dst); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestCopyDir(t *testing.T) {

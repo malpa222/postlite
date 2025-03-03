@@ -1,7 +1,9 @@
 package blogfsys
 
 import (
-	"io/fs"
+	"bytes"
+	"io"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -20,70 +22,135 @@ const (
 	Dotfile
 )
 
+// ---- DataSource
+
+type DataSource interface {
+	Open() (io.ReadCloser, error)
+
+	CopyTo(dst string) error
+
+	GetPath() string
+	GetKind() FileKind
+}
+
 // ---- BlogFile
 
-type BlogFile interface {
-	Read() ([]byte, error)
-
-	GetKind() FileKind
-	GetPath() string
+type BlogFile struct {
+	path string
 }
 
-type blogFile struct {
-	kind FileKind
-
-	fspath   string
-	fullpath string
+func (bf *BlogFile) Open() (io.ReadCloser, error) {
+	return os.Open(bf.path)
 }
 
-func newBlogFile(fspath string, fullpath string, d fs.DirEntry) BlogFile {
-	var bfile blogFile = blogFile{
-		fspath:   fspath,
-		fullpath: fullpath,
-		kind:     stat(d),
+func (bf *BlogFile) CopyTo(dst string) error {
+	sourceFile, err := bf.Open()
+	if err != nil {
+		return err
 	}
+	defer sourceFile.Close()
 
-	return &bfile
+	outFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	if _, err = io.Copy(outFile, sourceFile); err != nil {
+		return err
+	} else {
+		return nil
+	}
 }
 
-func (bf *blogFile) Read() ([]byte, error) {
-	return readFile(bf.fullpath)
+func (bf *BlogFile) GetPath() string {
+	return bf.path
 }
 
-func (bf *blogFile) GetKind() FileKind {
-	return bf.kind
-}
-
-func (bf *blogFile) GetPath() string {
-	return bf.fspath
-}
-
-// ---- Utils
-
-func stat(d fs.DirEntry) FileKind {
-	var aggr FileKind
-	var name = d.Name()
+func (bf *BlogFile) GetKind() FileKind {
+	var kind FileKind
+	name := filepath.Base(bf.path)
 
 	if strings.HasPrefix(name, ".") {
-		aggr += Dotfile
-	}
-
-	if d.IsDir() {
-		return aggr + Dir
+		kind += Dotfile
 	}
 
 	switch filepath.Ext(name) {
-	case ".md":
-		return aggr + MD
-	case ".html":
-		return aggr + HTML
-	case ".css":
-		return aggr + CSS
-	case ".yaml":
-		return aggr + YAML
 	case name: // just dotfile
-		return aggr
+		return kind
+	case ".md":
+		return kind + MD
+	case ".html":
+		return kind + HTML
+	case ".css":
+		return kind + CSS
+	case ".yaml":
+		return kind + YAML
 	default:
-		return aggr + Media
+		return kind + Media
 	}
+}
+
+// ---- BlogDir
+
+type BlogDir struct {
+	path string
+}
+
+func (bd *BlogDir) Open() (io.ReadCloser, error) {
+	return nil, io.EOF
+}
+
+func (bd *BlogDir) CopyTo(dst string) error {
+	sub := os.DirFS(bd.path)
+	return os.CopyFS(dst, sub)
+}
+
+func (bd *BlogDir) GetPath() string {
+	return bd.path
+}
+
+func (bd *BlogDir) GetKind() FileKind {
+	name := filepath.Base(bd.path)
+
+	if strings.HasPrefix(name, ".") {
+		return Dotfile | Dir
+	} else {
+		return Dir
+	}
+}
+
+// ---- BlogMemBuf
+
+type BlogMemBuf struct {
+	Buf []byte
+}
+
+func (bm *BlogMemBuf) Open() (io.ReadCloser, error) {
+	reader := bytes.NewReader(bm.Buf)
+	return io.NopCloser(reader), nil
+}
+
+func (bm *BlogMemBuf) CopyTo(dst string) error {
+	src, _ := bm.Open()
+
+	outFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	if _, err = io.Copy(outFile, src); err != nil {
+		return err
+	} else {
+		return nil
+	}
+}
+
+func (bd *BlogMemBuf) GetPath() string {
+	return ""
+}
+
+func (bm *BlogMemBuf) GetKind() FileKind {
+	return 0
 }
