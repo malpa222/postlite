@@ -7,9 +7,18 @@ import (
 	"path/filepath"
 )
 
+// ---- Resources
+
+const (
+	Index  string = "index.html"
+	Public string = "public"
+	Posts  string = "posts"
+	Styles string = "styles"
+)
+
 type FilterFunc = func(file BlogFile) bool
 
-// ------------ BlogFsys
+// ---- BlogFsys
 
 type BlogFsys interface {
 	fs.FS
@@ -18,8 +27,7 @@ type BlogFsys interface {
 	CopyBuf(dst string, buf []byte) error
 	CopyDir(source BlogFile, dst string) error
 
-	FindByKind(kind FileKind, maxDepth int) ([]BlogFile, error)
-	FindWithFilter(maxDepth int, filter FilterFunc) ([]BlogFile, error)
+	Find(maxDepth int, filter FilterFunc) ([]BlogFile, error)
 }
 
 type blogFsys struct {
@@ -80,23 +88,11 @@ func (b *blogFsys) CopyDir(entry BlogFile, dst string) error {
 
 // ---- Find
 
-func (b *blogFsys) FindByKind(kind FileKind, maxDepth int) ([]BlogFile, error) {
-	return b.find(maxDepth, func(file BlogFile) bool {
-		return kind == file.GetKind()
-	})
-}
-
-func (b *blogFsys) FindWithFilter(maxDepth int, filter FilterFunc) (files []BlogFile, err error) {
-	return b.find(maxDepth, func(file BlogFile) bool {
-		return filter(file)
-	})
-}
-
 // Find walks the directory tree up to maxDepth levels.
 // maxDepth == 1 : only root
 // maxDepth >= 2 : maxDepth
 // maxDepth <= 0 : full
-func (b *blogFsys) find(maxDepth int, filter func(BlogFile) bool) (files []BlogFile, err error) {
+func (b *blogFsys) Find(maxDepth int, filter FilterFunc) (files []BlogFile, err error) {
 	var root string = "."
 	var depth int = 1
 
@@ -125,7 +121,7 @@ func (b *blogFsys) find(maxDepth int, filter func(BlogFile) bool) (files []BlogF
 		}
 
 		// Check and update depth
-		if d.IsDir() {
+		if file.GetKind() == Dir {
 			if depth == maxDepth {
 				return fs.SkipDir
 			} else if depth < maxDepth {

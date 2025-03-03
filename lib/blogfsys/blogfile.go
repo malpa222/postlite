@@ -61,24 +61,29 @@ func (bf *blogFile) GetPath() string {
 // ---- Utils
 
 func stat(d fs.DirEntry) FileKind {
-	if strings.HasPrefix(d.Name(), ".") {
-		return Dotfile
+	var aggr FileKind
+	var name = d.Name()
+
+	if strings.HasPrefix(name, ".") {
+		aggr += Dotfile
 	}
 
 	if d.IsDir() {
-		return Dir
+		return aggr + Dir
 	}
 
-	switch filepath.Ext(d.Name()) {
+	switch filepath.Ext(name) {
 	case ".md":
-		return MD
+		return aggr + MD
 	case ".html":
-		return HTML
+		return aggr + HTML
 	case ".css":
-		return CSS
+		return aggr + CSS
 	case ".yaml":
-		return YAML
+		return aggr + YAML
+	case name: // just dotfile
+		return aggr
 	default:
-		return Media
+		return aggr + Media
 	}
 }

@@ -16,7 +16,7 @@ users should focus on what really matters - building their website exactly how t
 Your website needs to follow a certain structure:
 
 ```bash
-test/
+mysite/
 ├── assets/       # all media (images etc.)
 ├── index.md      # landing page
 ├── posts/
