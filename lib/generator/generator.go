@@ -23,6 +23,8 @@ import (
 var fsys b.BlogFsys
 
 func GenerateStaticContent(root string) error {
+	fsys = b.NewBlogFsys(root)
+
 	// set up filesystem
 	if err := fsys.Clean(b.Public); err != nil {
 		return err
@@ -47,11 +49,10 @@ func GenerateStaticContent(root string) error {
 
 func copyAssets(dirs []b.DataSource) {
 	for _, dir := range dirs {
-		src := dir.GetPath()
+		log.Printf("Copying %s ...", dir.GetPath())
 
-		log.Printf("Copying %s ...", src)
-
-		if err := fsys.Copy(dir, b.Public); err != nil {
+		dst := filepath.Join(b.Public, dir.GetPath())
+		if err := fsys.Copy(dir, dst); err != nil {
 			log.Printf("Copying failed: %s", err)
 		}
 	}
@@ -74,11 +75,7 @@ func parseMarkdown(files []b.DataSource) {
 			continue
 		}
 
-		html, err := parser.ParseMarkdown(md)
-		if err != nil {
-			log.Printf("Parsing %s failed: %s", file.GetPath(), err)
-			continue
-		}
+		html := parser.ParseMarkdown(md)
 
 		dst := strings.Replace(file.GetPath(), ".md", ".html", 1)
 		dst = filepath.Join(b.Public, dst)
@@ -93,11 +90,7 @@ func parseMarkdown(files []b.DataSource) {
 }
 
 var mdFilter b.FilterFunc = func(file b.DataSource) bool {
-	if file.GetKind() == b.MD {
-		return true
-	} else {
-		return false
-	}
+	return file.GetKind() == b.MD
 }
 
 var dirFilter b.FilterFunc = func(file b.DataSource) bool {
@@ -108,9 +101,5 @@ var dirFilter b.FilterFunc = func(file b.DataSource) bool {
 	pattern := fmt.Sprintf("%s|%s", b.Public, b.Posts)
 	re := regexp.MustCompile(pattern)
 
-	if !re.MatchString(file.GetPath()) {
-		return true
-	} else {
-		return false
-	}
+	return !re.MatchString(file.GetPath())
 }

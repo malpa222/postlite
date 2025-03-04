@@ -60,12 +60,11 @@ func (b *blogFsys) Copy(source DataSource, destination string) error {
 	destination = filepath.Join(b.root, destination)
 
 	// prepare output directory tree
-	dir := filepath.Dir(destination)
-	if err := os.MkdirAll(dir, 0777); err != nil {
+	if err := os.MkdirAll(destination, 0755); err != nil {
 		return err
 	}
 
-	return source.CopyTo(destination)
+	return source.copyTo(destination)
 }
 
 // Find walks the directory tree up to maxDepth levels.
@@ -88,9 +87,15 @@ func (b *blogFsys) Find(maxDepth int, filter FilterFunc) (files []DataSource, er
 
 		var file DataSource
 		if entry.IsDir() {
-			file = &BlogDir{path: filepath.Join(b.root, path)}
+			file = &BlogDir{
+				fspath: path,
+				path:   filepath.Join(b.root, path),
+			}
 		} else {
-			file = &BlogFile{path: filepath.Join(b.root, path)}
+			file = &BlogFile{
+				fspath: path,
+				path:   filepath.Join(b.root, path),
+			}
 		}
 
 		if filter(file) {

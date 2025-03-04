@@ -8,7 +8,7 @@ import (
 
 const generator = `  <meta name="GENERATOR" content="github.com/malpa222/homestead`
 
-func ParseMarkdown(md []byte) ([]byte, error) {
+func ParseMarkdown(md []byte) []byte {
 	var fm frontmatter
 	var parser = newParser(&fm)
 
@@ -17,7 +17,7 @@ func ParseMarkdown(md []byte) ([]byte, error) {
 	renderer := newRenderer(fm)
 	html := markdown.Render(doc, renderer)
 
-	return html, nil
+	return html
 }
 
 func newParser(fm *frontmatter) *parser.Parser {

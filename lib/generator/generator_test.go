@@ -17,7 +17,7 @@ const (
 func TestCopy(t *testing.T) {
 	setEnv()
 
-	if dirs, err := getDirs(); err != nil {
+	if dirs, err := fsys.Find(1, dirFilter); err != nil {
 		t.Fatal(err)
 	} else {
 		copyAssets(dirs)
@@ -31,7 +31,7 @@ func TestCopy(t *testing.T) {
 func TestParse(t *testing.T) {
 	setEnv()
 
-	if files, err := getMarkdown(); err != nil {
+	if files, err := fsys.Find(0, mdFilter); err != nil {
 		t.Fatal(err)
 	} else {
 		parseMarkdown(files)

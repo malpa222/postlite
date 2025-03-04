@@ -28,7 +28,7 @@ func TestFindRoot(t *testing.T) {
 	fsys := getEnv()
 
 	// Find only root directories
-	found, err := fsys.Find(1, func(file BlogFile) bool {
+	found, err := fsys.Find(1, func(file DataSource) bool {
 		if file.GetKind() == Dir {
 			return true
 		} else {
@@ -48,7 +48,7 @@ func TestFindChildren(t *testing.T) {
 	fsys := getEnv()
 
 	// Find with children
-	found, err := fsys.Find(2, func(file BlogFile) bool {
+	found, err := fsys.Find(2, func(file DataSource) bool {
 		if file.GetKind() == Dir {
 			return true
 		} else {
@@ -67,7 +67,7 @@ func TestFindAll(t *testing.T) {
 	var want int = 2
 	fsys := getEnv()
 
-	found, err := fsys.Find(0, func(file BlogFile) bool {
+	found, err := fsys.Find(0, func(file DataSource) bool {
 		if file.GetKind() == MD {
 			return true
 		} else {
@@ -86,7 +86,7 @@ func TestCopyFile(t *testing.T) {
 	fsys := getEnv()
 	dst := filepath.Join("public", testFile)
 
-	found, err := fsys.Find(1, func(file BlogFile) bool {
+	found, err := fsys.Find(1, func(file DataSource) bool {
 		if file.GetKind() == MD {
 			return true
 		} else {
@@ -107,21 +107,28 @@ func TestCopyFile(t *testing.T) {
 }
 
 func TestCopyDir(t *testing.T) {
-	// fsys := getEnv()
-	// dst := "public"
+	fsys := getEnv()
+	dst := "public"
 
-	// result, err := fsys.FindByKind(Dir, 1)
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
+	result, err := fsys.Find(1, func(file DataSource) bool {
+		if file.GetKind() == Dir {
+			return true
+		} else {
+			return false
+		}
+	})
 
-	// if err := fsys.CopyDir(result[0], dst); err != nil {
-	// 	t.Fatal(err)
-	// }
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	// if _, err = fs.Stat(fsys, dst); err != nil {
-	// 	t.Fatal(err)
-	// }
+	if err := fsys.Copy(result[0], dst); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err = fs.Stat(fsys, dst); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func getEnv() BlogFsys {
