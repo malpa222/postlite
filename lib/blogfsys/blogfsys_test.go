@@ -93,6 +93,7 @@ func TestCopyFile(t *testing.T) {
 			return false
 		}
 	})
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,8 +133,14 @@ func TestCopyDir(t *testing.T) {
 }
 
 func getEnv() BlogFsys {
-	fsys := NewBlogFsys(testDir)
-	fsys.Clean(Public)
+	fsys, err := NewBlogFsys(testDir)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := fsys.Clean(Public); err != nil {
+		panic(err)
+	}
 
 	return fsys
 }

@@ -1,8 +1,8 @@
 package blogfsys
 
 import (
+	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 )
@@ -32,17 +32,17 @@ type blogFsys struct {
 	root string
 }
 
-func NewBlogFsys(root string) BlogFsys {
+func NewBlogFsys(root string) (BlogFsys, error) {
 	root, err := filepath.Abs(root)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("path may be invalid %s: %w", root, err)
 	}
 
 	fsys := blogFsys{
 		root: root,
 	}
 
-	return &fsys
+	return &fsys, nil
 }
 
 func (b *blogFsys) Clean(dir string) error {
@@ -50,7 +50,7 @@ func (b *blogFsys) Clean(dir string) error {
 
 	os.RemoveAll(dir)
 	if err := os.MkdirAll(dir, 0777); err != nil {
-		return err
+		return fmt.Errorf("unable to create %s: %w", dir, err)
 	}
 
 	return nil
@@ -58,12 +58,6 @@ func (b *blogFsys) Clean(dir string) error {
 
 func (b *blogFsys) Copy(source DataSource, destination string) error {
 	destination = filepath.Join(b.root, destination)
-
-	// prepare output directory tree
-	if err := os.MkdirAll(destination, 0755); err != nil {
-		return err
-	}
-
 	return source.copyTo(destination)
 }
 
@@ -75,9 +69,9 @@ func (b *blogFsys) Find(maxDepth int, filter FilterFunc) (files []DataSource, er
 	var root string = "."
 	var depth int = 1
 
-	fs.WalkDir(b, root, func(path string, entry fs.DirEntry, err error) error {
+	err = fs.WalkDir(b, root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
-			return err
+			return fmt.Errorf("couldn't walk %s: %w", path, err)
 		}
 
 		// Skip the root directory
@@ -127,5 +121,9 @@ func (b *blogFsys) Find(maxDepth int, filter FilterFunc) (files []DataSource, er
 func (b *blogFsys) Open(name string) (fs.File, error) {
 	path := filepath.Join(b.root, name)
 
-	return os.Open(path)
+	if file, err := os.Open(path); err != nil {
+		return nil, fmt.Errorf("blogfsys.Open(%s): %w", name, err)
+	} else {
+		return file, err
+	}
 }

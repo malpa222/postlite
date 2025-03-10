@@ -1,19 +1,19 @@
 package server
 
 import (
-	"log/slog"
 	"net/http"
-	"os"
+
+	"github.com/malpa222/postlite/lib"
 )
 
 type BlogMux struct {
-	logger *slog.Logger
+	logger lib.Logger
 	mux    *http.ServeMux
 }
 
 func NewBlogMux() *BlogMux {
 	return &BlogMux{
-		logger: slog.New(slog.NewJSONHandler(os.Stdout, nil)),
+		logger: lib.NewLogger(false),
 		mux:    http.NewServeMux(),
 	}
 }

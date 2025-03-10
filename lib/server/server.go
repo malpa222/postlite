@@ -2,24 +2,27 @@ package server
 
 import (
 	"net/http"
+
+	"github.com/malpa222/postlite/lib/blogfsys"
 )
 
 type ServerConfig struct {
-	Root string
-
+	Root  string
 	Port  string
 	HTTPS bool
 }
 
-var finder ResourceFinder
-var mux *BlogMux = NewBlogMux()
+var resources Resources
+var mux *BlogMux
 
 func Serve(cfg ServerConfig) error {
-	if f, err := NewResourceFinder(cfg.Root); err != nil {
+	fsys, err := blogfsys.NewBlogFsys(cfg.Root)
+	if err != nil {
 		return err
-	} else {
-		finder = f
 	}
+
+	resources = Resources{fsys: fsys}
+	mux = NewBlogMux()
 
 	mux.HandleFunc("GET /posts/{id}", postHandler)
 	mux.HandleFunc("GET /styles/{name}", stylesHandler)
@@ -34,43 +37,57 @@ func indexHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	index := finder.GetIndex()
-	data, err := index.Read()
-	if err != nil {
+	index, err := resources.GetIndex()
+	if index == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	} else {
 		w.WriteHeader(http.StatusInternalServerError)
 		mux.logger.Error(err.Error())
+	}
+
+	data, err := index.ReadAll()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		mux.logger.Error("Unable to read the data source: %s", err.Error())
 	}
 
 	w.Write(data)
 }
 
 func postHandler(w http.ResponseWriter, req *http.Request) {
-	post := finder.GetPost(req.PathValue("id"))
-	if post == nil {
+	post, err := resources.GetPost(req.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		mux.logger.Error(err.Error())
+	} else if post == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	data, err := post.Read()
+	data, err := post.ReadAll()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		mux.logger.Error(err.Error())
+		mux.logger.Error("Unable to read the data source: %s", err.Error())
 	}
 
 	w.Write(data)
 }
 
 func stylesHandler(w http.ResponseWriter, req *http.Request) {
-	style := finder.GetStyle(req.PathValue("name"))
-	if style == nil {
+	style, err := resources.GetStyle(req.PathValue("name"))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		mux.logger.Error(err.Error())
+	} else if style == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	data, err := style.Read()
+	data, err := style.ReadAll()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		mux.logger.Error(err.Error())
+		mux.logger.Error("Unable to read the data source: %s", err.Error())
 	}
 
 	w.Header().Add("Content-type", "text/css")

@@ -2,6 +2,7 @@ package blogfsys
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -26,6 +27,7 @@ const (
 
 type DataSource interface {
 	Open() (io.ReadCloser, error)
+	ReadAll() ([]byte, error)
 
 	GetPath() string
 	GetKind() FileKind
@@ -41,7 +43,27 @@ type BlogFile struct {
 }
 
 func (bf *BlogFile) Open() (io.ReadCloser, error) {
-	return os.Open(bf.path)
+	file, err := os.Open(bf.path)
+	if err != nil {
+		return nil, fmt.Errorf("Open: %w", err)
+	}
+
+	return file, nil
+}
+
+func (bf *BlogFile) ReadAll() ([]byte, error) {
+	file, err := bf.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	buf, err := io.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("ReadAll: %w", err)
+	}
+
+	return buf, nil
 }
 
 func (bf *BlogFile) GetPath() string {
@@ -73,6 +95,12 @@ func (bf *BlogFile) GetKind() FileKind {
 }
 
 func (bf *BlogFile) copyTo(dst string) error {
+	// prepare output directory tree
+	dir := filepath.Dir(dst)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("failed creating directory %s: %w", dir, err)
+	}
+
 	sourceFile, err := bf.Open()
 	if err != nil {
 		return err
@@ -81,12 +109,16 @@ func (bf *BlogFile) copyTo(dst string) error {
 
 	outFile, err := os.Create(dst)
 	if err != nil {
-		return err
+		return fmt.Errorf("copyTo(%s): couldn't create: %w", dst, err)
 	}
 	defer outFile.Close()
 
 	_, err = io.Copy(outFile, sourceFile)
-	return err
+	if err != nil {
+		return fmt.Errorf("copyTo(%s): copying failed: %w", dst, err)
+	}
+
+	return nil
 }
 
 // ---- BlogDir
@@ -97,7 +129,11 @@ type BlogDir struct {
 }
 
 func (bd *BlogDir) Open() (io.ReadCloser, error) {
-	return nil, io.EOF
+	return nil, fmt.Errorf("%s is a directory", bd.fspath)
+}
+
+func (bd *BlogDir) ReadAll() ([]byte, error) {
+	return nil, fmt.Errorf("%s is a directory", bd.fspath)
 }
 
 func (bd *BlogDir) GetPath() string {
@@ -116,7 +152,12 @@ func (bd *BlogDir) GetKind() FileKind {
 
 func (bd *BlogDir) copyTo(dst string) error {
 	sub := os.DirFS(bd.path)
-	return os.CopyFS(dst, sub)
+
+	if err := os.CopyFS(dst, sub); err != nil {
+		return fmt.Errorf("copyTo: %w", err)
+	}
+
+	return nil
 }
 
 // ---- BlogMemBuf
@@ -130,6 +171,10 @@ func (bm *BlogMemBuf) Open() (io.ReadCloser, error) {
 	return io.NopCloser(reader), nil
 }
 
+func (bm *BlogMemBuf) ReadAll() ([]byte, error) {
+	return bm.Buf, nil
+}
+
 func (bd *BlogMemBuf) GetPath() string {
 	return ""
 }
@@ -141,12 +186,22 @@ func (bm *BlogMemBuf) GetKind() FileKind {
 func (bm *BlogMemBuf) copyTo(dst string) error {
 	src, _ := bm.Open()
 
+	// prepare output directory tree
+	dir := filepath.Dir(dst)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("failed creating directory %s: %w", dir, err)
+	}
+
 	outFile, err := os.Create(dst)
 	if err != nil {
-		return err
+		return fmt.Errorf("copyTo(%s): couldn't create: %w", dst, err)
 	}
 	defer outFile.Close()
 
 	_, err = io.Copy(outFile, src)
-	return err
+	if err != nil {
+		return fmt.Errorf("copyTo(%s): copying failed: %w", dst, err)
+	}
+
+	return nil
 }

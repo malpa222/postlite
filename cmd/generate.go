@@ -25,7 +25,12 @@ var generateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		root, _ := cmd.LocalFlags().GetString(gFlags.rootName)
 
-		if err := generator.GenerateStaticContent(root); err != nil {
+		gen, err := generator.NewGenerator(root)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if err := gen.GenerateStaticContent(); err != nil {
 			log.Fatal(err)
 		}
 	},
